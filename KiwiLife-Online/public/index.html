@@ -1,0 +1,2308 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Kiwi Life Online — Hanmer Springs 多人版 v1.2</title>
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/colyseus.js@0.15.26/dist/colyseus.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#222;font-family:"PingFang TC","Microsoft JhengHei",sans-serif}
+#game{position:absolute;inset:0}
+.hidden{display:none!important}
+#hud{position:absolute;top:8px;left:8px;background:linear-gradient(160deg,rgba(14,26,20,.93),rgba(26,46,36,.86));border:1px solid rgba(155,227,124,.28);box-shadow:0 8px 22px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(8px);border-radius:16px;padding:10px 12px;color:#fff;z-index:10;min-width:210px;font-size:12px}
+#hudTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.1)}
+#hudName{font-weight:800;font-size:13px;color:#9be37c;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.statrow{display:flex;align-items:center;gap:7px;margin:5px 0}
+.statrow span{width:18px;text-align:center;font-size:13px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4))}
+.statrow em{width:26px;font-size:10px;font-style:normal;color:#cfe3d5;text-align:right;font-variant-numeric:tabular-nums}
+.bar{flex:1;height:11px;background:rgba(0,0,0,.5);border-radius:7px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.6)}
+.bar i{display:block;height:100%;border-radius:7px;transition:width .35s ease;box-shadow:inset 0 -2px 3px rgba(0,0,0,.25),inset 0 1px 2px rgba(255,255,255,.45)}
+#bHunger{background:linear-gradient(90deg,#e07b2e,#ffb056)}
+#bEnergy{background:linear-gradient(90deg,#e8b21f,#ffe27a)}
+#bMood{background:linear-gradient(90deg,#3f8fd6,#8ad2ff)}
+#bHealth{background:linear-gradient(90deg,#d6484f,#ff8e8e)}
+.bar i.low{animation:lowPulse .9s infinite}
+@keyframes lowPulse{50%{opacity:.4}}
+#hudInfo{display:flex;justify-content:space-between;gap:5px;margin-top:8px;font-weight:700}
+#hudInfo span{background:rgba(0,0,0,.32);border-radius:9px;padding:4px 9px;font-size:11.5px;box-shadow:inset 0 1px 2px rgba(0,0,0,.4)}
+#money{color:#9be37c}
+#quest{position:absolute;top:62px;right:8px;background:rgba(20,30,25,.78);border-radius:10px;padding:8px 12px;color:#ffe9a8;z-index:10;font-size:12px;max-width:230px;line-height:1.5}
+#tools{position:absolute;top:8px;right:8px;z-index:12;display:flex;gap:6px;background:linear-gradient(160deg,rgba(14,26,20,.93),rgba(26,46,36,.86));border:1px solid rgba(155,227,124,.28);box-shadow:0 6px 18px rgba(0,0,0,.4);backdrop-filter:blur(8px);border-radius:14px;padding:6px}
+.toolBtn{width:42px;height:42px;border:2px solid transparent;border-radius:11px;background:rgba(0,0,0,.34);font-size:21px;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:transform .12s,border-color .15s,box-shadow .15s;position:relative;padding:0}
+.toolBtn:active{transform:scale(.9)}
+.toolBtn.locked{opacity:.32;filter:grayscale(1);cursor:default}
+.toolBtn.on{border-color:#9be37c;background:rgba(155,227,124,.22);box-shadow:0 0 11px rgba(155,227,124,.55)}
+.toolBtn .dot{position:absolute;top:-3px;right:-3px;font-size:9px;background:#3f7d52;border-radius:8px;padding:0 4px;line-height:13px;min-width:13px;text-align:center}
+#quest b{color:#fff;display:block;margin-bottom:2px}
+#dialog{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;width:min(560px,92vw);background:rgba(18,26,22,.93);border:2px solid #5a8a6a;border-radius:12px;padding:12px 16px;color:#fff;z-index:30;cursor:pointer}
+#dlgName{color:#9be37c;font-weight:700;margin-bottom:4px;font-size:14px}
+#dlgOpts{margin-top:8px}
+.dlgBtn{display:inline-block;background:#3f7d52;color:#fff;border:none;border-radius:8px;padding:8px 13px;font-size:13px;margin:3px 6px 3px 0;cursor:pointer}
+.dlgBtn:active{background:#2e5e3d}
+#dlgText{font-size:14px;line-height:1.6;min-height:40px}
+.dlgHint{text-align:right;font-size:11px;color:#8aa;margin-top:4px}
+#hint{position:absolute;left:50%;transform:translateX(-50%);bottom:120px;background:rgba(20,30,25,.85);color:#ffe9a8;padding:6px 14px;border-radius:16px;font-size:13px;z-index:9}
+#toast{position:absolute;left:50%;top:18%;transform:translateX(-50%);background:rgba(30,50,40,.92);color:#fff;padding:8px 18px;border-radius:18px;font-size:14px;z-index:40;transition:opacity .4s;opacity:0;pointer-events:none;text-align:center}
+#overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:center;justify-content:center}
+#ovBox{background:#1d2a22;border:2px solid #5a8a6a;border-radius:14px;padding:20px;color:#fff;width:min(440px,92vw);max-height:84vh;overflow:auto}
+#ovBox h2{font-size:18px;color:#9be37c;margin-bottom:10px}
+#ovBox p{font-size:14px;line-height:1.7;margin-bottom:10px}
+.btn{display:inline-block;background:#3f7d52;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:14px;margin:4px 6px 4px 0;cursor:pointer}
+.btn:active{background:#2e5e3d}
+.btn.gray{background:#4a554e}
+.shopItem{display:flex;justify-content:space-between;align-items:center;background:#26352c;border-radius:8px;padding:8px 10px;margin:6px 0;font-size:14px}
+.shopItem small{display:block;color:#9bb;font-size:11px}
+#joy{position:absolute;left:18px;bottom:18px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.12);z-index:20;touch-action:none}
+#stick{position:absolute;left:35px;top:35px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.45)}
+#btnAct{position:absolute;right:22px;bottom:30px;width:64px;height:64px;border-radius:50%;background:rgba(120,200,140,.85);color:#13301d;font-size:24px;font-weight:800;display:flex;align-items:center;justify-content:center;z-index:20;touch-action:none}
+#intro{position:absolute;inset:0;background:linear-gradient(160deg,#14301f,#1d4a33);z-index:100;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff}
+#intro .box{max-width:520px;padding:30px}
+#intro h1{font-size:28px;color:#9be37c;margin-bottom:4px}
+#intro h3{font-size:15px;color:#ffe9a8;font-weight:400;margin-bottom:16px}
+#intro p{font-size:13px;line-height:1.9;color:#cfe3d5;margin-bottom:18px;text-align:left}
+#intro .big{background:#f0a04b;color:#3a230b;font-size:17px;font-weight:700;padding:12px 34px;border-radius:26px;border:none;cursor:pointer}
+#btnChat{position:absolute;right:26px;bottom:108px;width:56px;height:56px;border-radius:50%;background:rgba(110,180,220,.85);display:flex;align-items:center;justify-content:center;font-size:22px;z-index:20;touch-action:none}
+#chatBar{position:absolute;left:50%;transform:translateX(-50%);bottom:150px;z-index:36;display:flex;gap:6px}
+#chatBar input{padding:10px 14px;border-radius:18px;border:none;width:min(300px,60vw);font-size:14px}
+#chatBar button{border:none;border-radius:18px;padding:0 16px;background:#3f7d52;color:#fff;font-size:14px;cursor:pointer}
+#chatLog{position:absolute;left:8px;bottom:138px;z-index:9;width:min(340px,66vw);max-height:148px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;pointer-events:none}
+#chatLog .msg{background:rgba(20,30,25,.72);border-radius:9px;padding:4px 9px;font-size:12px;line-height:1.45;color:#e7f0e9;max-width:100%;word-break:break-word;box-shadow:0 1px 4px rgba(0,0,0,.3);animation:msgIn .25s ease}
+#chatLog .msg b{color:#9be37c}
+#chatLog .msg.wh{background:rgba(60,40,72,.82);color:#f0d9ff}
+#chatLog .msg.wh b{color:#d9a8ff}
+#chatLog .msg.sys{background:rgba(40,52,44,.7);color:#9bb;font-style:italic}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}}
+#btnFriends{position:absolute;right:8px;top:296px;z-index:10;background:rgba(20,30,25,.78);border:none;border-radius:10px;color:#fff;padding:7px 11px;font-size:17px;cursor:pointer}
+#online{cursor:pointer}
+.flRow{display:flex;justify-content:space-between;align-items:center;background:#26352c;border-radius:8px;padding:7px 10px;margin:5px 0;font-size:13px;gap:8px}
+.flRow .nm{font-weight:700;color:#fff;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flDot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.flDot.on{background:#6fe06f;box-shadow:0 0 6px #6fe06f}
+.flDot.off{background:#6b6b6b}
+.flBtn{border:none;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer;color:#fff;background:#3f7d52;white-space:nowrap}
+.flBtn.sec{background:#3f6aa8}
+.flBtn.del{background:#7a4040}
+.flBtn:active{filter:brightness(.85)}
+.flSec{font-size:12px;color:#9bb;margin:12px 0 4px;font-weight:700}
+#pname{padding:10px 14px;border-radius:20px;border:none;width:min(280px,74vw);text-align:center;font-size:14px;margin-bottom:14px}
+#btnMap{position:absolute;right:8px;top:158px;z-index:10;background:rgba(20,30,25,.78);border:none;border-radius:10px;color:#fff;padding:7px 11px;font-size:17px;cursor:pointer}
+#btnGuide{position:absolute;right:8px;top:204px;z-index:10;background:rgba(20,30,25,.78);border:none;border-radius:10px;color:#fff;padding:7px 11px;font-size:17px;cursor:pointer}
+#btnProfile{position:absolute;right:8px;top:250px;z-index:10;background:rgba(20,30,25,.78);border:none;border-radius:10px;color:#fff;padding:7px 11px;font-size:17px;cursor:pointer}
+.cvRow{margin:7px 0}
+.cvRow label{display:block;font-size:12px;color:#9bb;margin-bottom:3px}
+.cvRow input,.cvRow select,.cvRow textarea{width:100%;border:none;border-radius:8px;padding:8px 10px;font-size:13px;background:#26352c;color:#fff;font-family:inherit}
+.cvRow textarea{height:54px;resize:none}
+.pRow{display:flex;justify-content:space-between;background:#26352c;border-radius:8px;padding:7px 10px;margin:5px 0;font-size:13px}
+.pRow b{color:#9be37c}
+.badge{display:inline-block;background:#26352c;border-radius:8px;padding:6px 10px;margin:3px 4px 3px 0;font-size:12px}
+.badge.off{opacity:.35}
+.gTab{display:inline-block;background:#26352c;color:#cfe3d5;border:none;border-radius:8px;padding:8px 14px;font-size:14px;margin-right:6px;cursor:pointer}
+.gTab.on{background:#3f7d52;color:#fff;font-weight:700}
+.gItem{background:#26352c;border-radius:8px;padding:8px 10px;margin:6px 0;font-size:13px}
+.gItem b{color:#9be37c}
+.gItem small{display:block;color:#9bb;font-size:11px;margin-top:2px;line-height:1.5}
+.gTag{display:inline-block;background:#3f6aa8;color:#fff;border-radius:6px;font-size:10px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+#mapOv{position:absolute;inset:0;background:rgba(0,0,0,.74);z-index:60;display:flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}
+#mapWrap{position:relative}
+#mapImg{display:block;max-width:92vw;max-height:78vh;border:3px solid #5a8a6a;border-radius:10px}
+#mapMark{position:absolute;width:14px;height:14px;border-radius:50%;background:#ff4d4d;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 10px #ff4d4d;animation:mpulse 1.1s infinite}
+@keyframes mpulse{50%{transform:translate(-50%,-50%) scale(1.4)}}
+#mapTip{color:#cfe3d5;font-size:13px;margin-top:10px;background:rgba(20,30,25,.85);padding:6px 16px;border-radius:14px}
+#mpStatus{margin-top:12px;color:#9be37c;font-size:12px;text-align:center}
+#battle{position:absolute;inset:0;background:rgba(8,14,10,.82);z-index:70;display:flex;align-items:center;justify-content:center}
+#btlBox{width:min(620px,94vw);background:linear-gradient(165deg,#cfe8d2,#9ed1b2);border:3px solid #2e5e3d;border-radius:16px;padding:16px;position:relative;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.bSide{display:flex;align-items:center;gap:12px}
+.bSpr{font-size:58px;filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));animation:bIdle 1.6s infinite ease-in-out}
+@keyframes bIdle{50%{transform:translateY(-5px)}}
+.bCard{background:rgba(255,255,255,.85);border:2px solid #2e5e3d;border-radius:10px;padding:6px 10px;min-width:220px}
+.bName{font-size:13px;font-weight:800;color:#1d2a22}
+.bHp{height:10px;background:#cdd9ce;border-radius:6px;overflow:hidden;margin-top:4px}
+.bHp i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#3f7d52,#7fd98a);transition:width .4s}
+#btlEnemy{justify-content:flex-end;margin-bottom:10px}
+#btlMine{margin-bottom:10px}
+#btlMsg{background:#1d2a22;color:#fff;border-radius:10px;padding:10px 14px;font-size:14px;min-height:44px;line-height:1.55}
+#btlBtns{margin-top:8px;min-height:40px}
+</style>
+</head>
+<body>
+<div id="game"></div>
+
+<div id="hud">
+  <div id="hudTop"><span id="hudName">🥝 Kiwi 旅人</span><button id="btnSnd" style="background:none;border:none;font-size:14px;cursor:pointer;padding:0">🔊</button></div>
+  <div class="statrow"><span>🍔</span><div class="bar"><i id="bHunger"></i></div><em id="vHunger">80</em></div>
+  <div class="statrow"><span>⚡</span><div class="bar"><i id="bEnergy"></i></div><em id="vEnergy">90</em></div>
+  <div class="statrow"><span>😊</span><div class="bar"><i id="bMood"></i></div><em id="vMood">70</em></div>
+  <div class="statrow"><span>❤️</span><div class="bar"><i id="bHealth"></i></div><em id="vHealth">100</em></div>
+  <div id="hudInfo"><span id="money">$20</span><span id="online">👥 1</span><span id="clock">☀️ Day 1 07:00</span></div>
+  <div style="margin-top:5px;display:flex;justify-content:space-between;align-items:center"><span id="inv" style="color:#ffe9a8"></span></div>
+</div>
+<div id="tools">
+  <button class="toolBtn" id="tBike" title="腳踏車：加速移動（B）" onclick="toggleBike()">🚲</button>
+  <button class="toolBtn" id="tRod" title="釣竿：到 Dog Stream 河邊釣魚" onclick="useRod()">🎣</button>
+  <button class="toolBtn" id="tTorch" title="手電筒：夜間照明（F）" onclick="toggleTorch()">🔦</button>
+  <button class="toolBtn" id="tCam" title="相機：拍下眼前的風景（C）" onclick="useCamera()">📷</button>
+</div>
+<div id="quest"><b>📋 目前任務</b><span id="questText"></span></div>
+<div id="hint" class="hidden"></div>
+<div id="dialog" class="hidden"><div id="dlgName"></div><div id="dlgText"></div><div id="dlgOpts" class="hidden"></div><div class="dlgHint">點擊或按 E 繼續 ▼</div></div>
+<div id="toast"></div>
+<div id="overlay" class="hidden"><div id="ovBox"></div></div>
+<div id="joy" class="hidden"><div id="stick"></div></div>
+<div id="btnAct" class="hidden">E</div>
+<div id="btnChat" class="hidden">💬</div>
+<div id="chatLog" class="hidden"></div>
+<div id="chatBar" class="hidden"><input id="chatIn" maxlength="80" placeholder="說點什麼… Enter 送出"><button id="chatSend">送出</button></div>
+<button id="btnMap" title="真實地圖 (M)">🗺</button>
+<button id="btnGuide" title="小鎮指南：住宿與餐廳 (G)">📖</button>
+<button id="btnProfile" title="個人資料與履歷表 (P)">👤</button>
+<button id="btnFriends" title="好友與在線玩家">🧑‍🤝‍🧑</button>
+<div id="battle" class="hidden"><div id="btlBox">
+  <div class="bSide" id="btlEnemy"><div class="bCard"><div class="bName" id="beName"></div><div class="bHp"><i id="beHp"></i></div></div><div class="bSpr" id="beSpr"></div></div>
+  <div class="bSide" id="btlMine"><div class="bSpr" id="bmSpr"></div><div class="bCard"><div class="bName" id="bmName"></div><div class="bHp"><i id="bmHp"></i></div></div></div>
+  <div id="btlMsg"></div><div id="btlBtns"></div>
+</div></div>
+<div id="mapOv" class="hidden">
+  <div id="mapWrap"><img id="mapImg" src="hanmer springs map.jpg" alt="Hanmer Springs 真實地圖"><div id="mapMark"></div></div>
+  <div id="mapTip">🗺 Hanmer Springs 真實地圖 ｜ 📍 紅點＝你的約略位置 ｜ 按 M / Esc / 點擊關閉</div>
+</div>
+
+<div id="intro">
+  <div class="box">
+    <h1>Kiwi Life Online</h1>
+    <h3>♨ Hanmer Springs 溫泉小鎮 — 多人連線版 v1.2</h3>
+    <p>
+      你剛抵達紐西蘭南島的溫泉小鎮 Hanmer Springs，身上只有 $20。<br>
+      在這裡找到工作、填飽肚子、泡個溫泉、租個床位，開始你的紐西蘭人生。<br><br>
+      🖥 電腦：WASD / 方向鍵移動，E 互動，M 地圖，G 指南，B 腳踏車，F 手電筒，C 相機<br>
+      📱 手機：左下搖桿移動，右下按鈕互動，右上角 🎒 工具列：🚲 腳踏車・🎣 釣竿・🔦 手電筒・📷 相機<br><br>
+      地圖依照真實 Hanmer Springs 設計：Amuri Ave 主街、溫泉水療中心、
+      Conical Hill 觀景台、Hanmer Forest、Dog Stream、高爾夫球場。<br><br>🆕 v1.2：🧢 精靈系統登場！森林、草原、公園、溫泉園區有 12 種紐西蘭野生精靈（Kiwi、Kea、Tuatara、蒸氣精靈…）——回合制對戰、奇異球收服、升級成長！第一次踏進草叢可選擇夥伴，奇異球在 Four Square 補貨。
+    </p>
+    <div><input id="pname" maxlength="12" placeholder="輸入你的暱稱（其他玩家看得到）"></div>
+    <button class="big" id="btnStart">🥝 開始新生活</button>
+    <p id="mpStatus">🌐 多人模式：開始後自動連線</p>
+  </div>
+</div>
+
+<script>
+if(typeof Phaser==='undefined'){document.getElementById('intro').innerHTML='<div class="box"><h1>需要網路連線</h1><p>第一次開啟需要網路載入遊戲引擎，請連網後重新整理。</p></div>';}
+// 全域錯誤回報：出錯時顯示在畫面上（方便回報修復）
+window.addEventListener('error',e=>{
+  try{const el=document.getElementById('toast');
+    el.innerHTML='⚠ 錯誤：'+e.message;el.style.opacity=1;
+    setTimeout(()=>el.style.opacity=0,6000);}catch(_){}
+});
+
+// ---------- 遊戲狀態 ----------
+const S = {
+  money:20, hunger:80, energy:90, mood:70, health:100,
+  quest:0, poolPass:false, day:1, mins:7*60,
+  soakT:0, lookoutDay:0, picnicDay:0, shiftsDone:0,
+  inv:{rod:false, fw:false, fish:{}, bike:true, torch:true, cam:true},
+  fishCaught:0, bikeOn:false, torchOn:false, photos:0, applied:false
+};
+// 店家應徵收件信箱
+const JOB_EMAIL='wkin4520@gmail.com';
+const QUESTS = [
+  '到 i-SITE 遊客中心找 Aroha 報到',
+  '去 Fire & Ice 咖啡餐廳（37 Amuri Ave）找老闆 Tom 面試',
+  '跟 Tom 說話，完成一次咖啡店打工',
+  '去 Four Square 超市（12 Conical Hill Rd）買食物，把肚子餵飽',
+  '跟溫泉櫃台 Mia 買門票，走進溫泉池泡湯 ♨',
+  '回背包客棧找 Jack，睡一覺',
+  '跟 Sam 買釣竿（$12），到 Dog Stream 河邊釣到第一條魚',
+  '幫河邊的 Ruru 爺爺釣 3 條魚（拿給他）',
+  '幫咖啡店常客 Hana 外帶一杯 Flat White（Four Square 有賣）',
+  '自由生活：打工、釣魚、泡溫泉，經營你的小鎮人生'
+];
+let dialogOpen=false, overlayOpen=true, dlgLines=[], dlgIdx=0, dlgEnd=null, choiceOpen=false;
+let joy={x:0,y:0};
+
+// ---------- UI ----------
+const $=id=>document.getElementById(id);
+function ui(){
+  const setBar=(k,v)=>{
+    const bar=$('b'+k),txt=$('v'+k);
+    bar.style.width=v+'%';
+    bar.classList.toggle('low',v<22);
+    if(txt)txt.textContent=Math.round(v);
+  };
+  setBar('Hunger',S.hunger);setBar('Energy',S.energy);
+  setBar('Mood',S.mood);setBar('Health',S.health);
+  $('money').textContent='$'+Math.floor(S.money);
+  const h=Math.floor(S.mins/60),m=Math.floor(S.mins%60);
+  const ico=h<5?'🌙':h<7?'🌅':h<18?'☀️':h<21?'🌆':'🌙';
+  $('clock').textContent=ico+' Day '+S.day+' '+String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+  $('questText').textContent=QUESTS[S.quest];
+  let inv='';
+  if(S.inv.rod)inv+='🎣 ';
+  const fc=Object.values(S.inv.fish).reduce((a,b)=>a+b,0);
+  if(fc>0)inv+='🐟×'+fc+' ';
+  if(S.inv.fw)inv+='☕(Hana)';
+  $('inv').textContent=inv;
+  renderTools();
+}
+
+// ---------- 🎒 個人背包・右上角工具列 ----------
+function renderTools(){
+  const set=(id,owned,on,dot)=>{
+    const b=$(id); if(!b)return;
+    b.classList.toggle('locked',!owned);
+    b.classList.toggle('on',owned&&!!on);
+    const old=b.querySelector('.dot'); if(old)old.remove();
+    if(owned&&dot){const s=document.createElement('span');s.className='dot';s.textContent=dot;b.appendChild(s);}
+  };
+  const fishCount=Object.values(S.inv.fish).reduce((a,b)=>a+b,0);
+  set('tBike',S.inv.bike,S.bikeOn);
+  set('tRod',S.inv.rod,(typeof fishing!=='undefined'&&fishing),fishCount>0?fishCount:'');
+  set('tTorch',S.inv.torch,S.torchOn);
+  set('tCam',S.inv.cam,false,S.photos>0?S.photos:'');
+}
+function toggleBike(){
+  if(!S.inv.bike){toast('🚲 你還沒有腳踏車');return;}
+  S.bikeOn=!S.bikeOn;
+  if(SND)S.bikeOn?SND.blip():SND.step();
+  toast(S.bikeOn?'🚲 騎上腳踏車，移動速度加快！':'🚶 下車步行');
+  ui();
+}
+function toggleTorch(){
+  if(!S.inv.torch){toast('🔦 你還沒有手電筒');return;}
+  S.torchOn=!S.torchOn;
+  if(SND)SND.blip();
+  toast(S.torchOn?'🔦 手電筒已開啟，夜路更明亮':'🔦 手電筒已關閉');
+  ui();
+}
+function useRod(){
+  if(!S.inv.rod){toast('🎣 還沒有釣竿，去 Four Square 找 Sam 買（$12）');return;}
+  toast('🎣 走到 Dog Stream 河邊，靠近水面按 E 開始釣魚');
+}
+const CAM_SCENES=[
+  '♨ 蒸氣裊裊的溫泉池，霧氣裡有人泡得正舒服',
+  '🌲 Hanmer Forest 高聳的松林，陽光從枝葉間灑下',
+  '⛰ Conical Hill 觀景台，整個小鎮盡收眼底',
+  '🌊 Dog Stream 清澈的溪水，幾條魚正悠游',
+  '🏔 遠方的南阿爾卑斯山，山頂還積著白雪',
+  '🌅 Amuri Ave 主街，木造店屋透著暖黃燈光',
+  '🦜 一隻 Kea 停在欄杆上，好奇地歪著頭看你'
+];
+function useCamera(){
+  if(!S.inv.cam){toast('📷 你還沒有相機');return;}
+  if(SND)SND.pop();
+  const scene=CAM_SCENES[(Math.random()*CAM_SCENES.length)|0];
+  S.photos++;
+  S.mood=Math.min(100,S.mood+2);
+  toast('📷 喀嚓！拍下了：<br>'+scene+'<br><small>😊 心情 +2　｜　相簿共 '+S.photos+' 張</small>');
+  ui();
+}
+let toastT=null;
+function toast(t){
+  const el=$('toast'); el.innerHTML=t; el.style.opacity=1;
+  clearTimeout(toastT); toastT=setTimeout(()=>el.style.opacity=0,2600);
+}
+function showDialog(name,lines,onEnd){
+  dialogOpen=true; dlgLines=lines; dlgIdx=0; dlgEnd=onEnd||null;
+  choiceOpen=false;$('dlgOpts').classList.add('hidden');$('dlgOpts').innerHTML='';
+  $('dlgName').textContent=name; $('dlgText').textContent=lines[0];
+  $('dialog').classList.remove('hidden');
+}
+function showChoice(name,text,opts){
+  dialogOpen=true;choiceOpen=true;dlgLines=[];dlgEnd=null;
+  $('dlgName').textContent=name;$('dlgText').textContent=text;
+  const box=$('dlgOpts');box.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');
+    b.className='dlgBtn';b.textContent=o.label;
+    b.addEventListener('pointerdown',ev=>{ev.stopPropagation();closeChoice();if(o.fn)o.fn();});
+    box.appendChild(b);
+  });
+  box.classList.remove('hidden');
+  $('dialog').classList.remove('hidden');
+}
+function closeChoice(){
+  choiceOpen=false;dialogOpen=false;
+  $('dlgOpts').classList.add('hidden');$('dlgOpts').innerHTML='';
+  $('dialog').classList.add('hidden');
+}
+function advDialog(){
+  if(!dialogOpen||choiceOpen)return;
+  SND.blip();
+  dlgIdx++;
+  if(dlgIdx<dlgLines.length){$('dlgText').textContent=dlgLines[dlgIdx];}
+  else{dialogOpen=false;$('dialog').classList.add('hidden');if(dlgEnd){const f=dlgEnd;dlgEnd=null;f();}}
+}
+$('dialog').addEventListener('pointerdown',e=>{e.stopPropagation();advDialog();});
+function openOv(html){overlayOpen=true;$('ovBox').innerHTML=html;$('overlay').classList.remove('hidden');}
+function closeOv(){overlayOpen=false;guideOpen=false;$('overlay').classList.add('hidden');if(scn){scn.input.keyboard.enabled=true;scn.input.keyboard.enableGlobalCapture();}}
+function setQuest(n){if(n>S.quest){S.quest=Math.min(n,QUESTS.length-1);SND.ok();toast('📋 新任務：'+QUESTS[S.quest]);ui();}}
+
+
+// ---------- 音效（WebAudio 程式合成）----------
+const SND={ctx:null,on:true,
+  init(){if(this.ctx)return;const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    this.ctx=new AC();this.g=this.ctx.createGain();this.g.gain.value=.5;this.g.connect(this.ctx.destination);this.amb();},
+  t(){return this.ctx.currentTime;},
+  tone(f0,f1,dur,type,vol,delay){if(!this.ctx||!this.on)return;
+    const o=this.ctx.createOscillator(),g=this.ctx.createGain(),t0=this.t()+(delay||0);
+    o.type=type||'sine';o.frequency.setValueAtTime(f0,t0);
+    o.frequency.exponentialRampToValueAtTime(Math.max(1,f1||f0),t0+dur);
+    g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(vol||.15,t0+.02);
+    g.gain.exponentialRampToValueAtTime(.001,t0+dur);
+    o.connect(g);g.connect(this.g);o.start(t0);o.stop(t0+dur+.05);},
+  noise(dur,vol,fc){if(!this.ctx||!this.on)return;
+    const n=(this.ctx.sampleRate*dur)|0,b=this.ctx.createBuffer(1,n,this.ctx.sampleRate),d=b.getChannelData(0);
+    for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+    const src=this.ctx.createBufferSource();src.buffer=b;
+    const f=this.ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=fc||1000;
+    const g=this.ctx.createGain(),t0=this.t();
+    g.gain.setValueAtTime(vol||.1,t0);g.gain.exponentialRampToValueAtTime(.001,t0+dur);
+    src.connect(f);f.connect(g);g.connect(this.g);src.start();},
+  step(){this.noise(.06,.04,700);},
+  blip(){this.tone(660,880,.06,'square',.05);},
+  coin(){this.tone(880,880,.08,'square',.1);this.tone(1318,1318,.14,'square',.1,.08);},
+  ok(){this.tone(523,523,.1,'triangle',.13);this.tone(659,659,.1,'triangle',.13,.1);this.tone(784,784,.2,'triangle',.13,.2);},
+  bad(){this.tone(280,160,.3,'sawtooth',.08);},
+  eat(){this.tone(420,260,.1,'triangle',.1);this.tone(420,260,.1,'triangle',.1,.14);},
+  splash(){this.noise(.35,.16,1500);this.tone(900,180,.3,'sine',.08);},
+  pop(){this.tone(950,1250,.06,'sine',.09);},
+  sleep(){this.tone(440,220,1.2,'sine',.07);},
+  bird(){const f=1700+Math.random()*1000;this.tone(f,f*.8,.12,'sine',.04);this.tone(f*1.12,f*.85,.1,'sine',.03,.16);},
+  cricket(){this.tone(4200,4200,.05,'sine',.025);this.tone(4200,4200,.05,'sine',.025,.09);},
+  amb(){const loop=()=>{if(this.ctx&&this.on){const h=S.mins/60;
+      if(h>=6&&h<19){if(Math.random()<.55)this.bird();}
+      else{if(Math.random()<.6)this.cricket();}}
+    setTimeout(loop,2500+Math.random()*4000);};loop();}
+};
+
+// ---------- 像素材質生成 ----------
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+function makeTiles(scene){
+  const T=32,n=31;
+  const cv=scene.textures.createCanvas('tiles',T*n,T);
+  const ctx=cv.getContext();
+  const rnd=mulberry(7);
+  const base=(i,c)=>{ctx.fillStyle=c;ctx.fillRect(i*T,0,T,T);};
+  const dot=(i,c,k)=>{ctx.fillStyle=c;for(let j=0;j<k;j++)ctx.fillRect(i*T+((rnd()*28)|0),(rnd()*28)|0,3,3);};
+  base(0,'#6abe5e');dot(0,'#5cad52',8);dot(0,'#79c96d',6);            // 0 草地
+  base(1,'#9b9b93');dot(1,'#8d8d86',6);                               // 1 馬路
+  base(2,'#d6b98c');dot(2,'#c7a878',8);                               // 2 小徑
+  base(3,'#4f9fd8');dot(3,'#6db4e4',6);                               // 3 河水
+  base(4,'#5cad52');ctx.fillStyle='#7a5230';ctx.fillRect(4*T+13,20,6,9); // 4 樹
+  ctx.fillStyle='#2e7d3c';ctx.beginPath();ctx.arc(4*T+16,12,11,0,7);ctx.fill();
+  ctx.fillStyle='#3c934a';ctx.beginPath();ctx.arc(4*T+11,9,6,0,7);ctx.fill();
+  base(5,'#e8dcc3');ctx.fillStyle='#b7e0ef';ctx.fillRect(5*T+8,10,16,12); // 5 牆+窗
+  ctx.strokeStyle='#7e7261';ctx.strokeRect(5*T+8.5,10.5,16,12);
+  base(6,'#b3543f');ctx.fillStyle='#9c4836';for(let y=4;y<32;y+=8)ctx.fillRect(6*T,y,T,3); // 6 紅屋頂
+  base(7,'#69d3c8');dot(7,'#8de4da',7);dot(7,'#ffffff',3);            // 7 溫泉池
+  base(8,'#8fd07a');ctx.fillStyle='#84c570';for(let y=0;y<32;y+=8)ctx.fillRect(8*T,y,T,4); // 8 高爾夫草坪
+  base(9,'#6abe5e');dot(9,'#f2789f',4);dot(9,'#f7d154',4);dot(9,'#ffffff',3); // 9 花圃
+  base(10,'#6abe5e');ctx.fillStyle='#8a6238';ctx.fillRect(10*T,10,T,4);ctx.fillRect(10*T,20,T,4); // 10 圍欄
+  ctx.fillRect(10*T+4,6,4,22);ctx.fillRect(10*T+24,6,4,22);
+  base(11,'#cfc8b8');ctx.strokeStyle='#bdb5a4';ctx.strokeRect(11*T+.5,.5,16,16);ctx.strokeRect(11*T+16.5,16.5,15,15); // 11 廣場石板
+  base(12,'#6abe5e');ctx.fillStyle='#8e8e8e';ctx.beginPath();ctx.arc(12*T+16,18,10,0,7);ctx.fill(); // 12 岩石
+  ctx.fillStyle='#a5a5a5';ctx.beginPath();ctx.arc(12*T+12,14,5,0,7);ctx.fill();
+  base(13,'#e3cf9b');dot(13,'#d8c28a',6);                             // 13 沙坑
+  base(14,'#5d7a96');ctx.fillStyle='#516b84';for(let y=4;y<32;y+=8)ctx.fillRect(14*T,y,T,3); // 14 藍屋頂
+  base(15,'#e8dcc3');ctx.fillStyle='#7a5230';ctx.fillRect(15*T+8,6,16,26); // 15 門
+  ctx.fillStyle='#f7d154';ctx.fillRect(15*T+20,18,3,3);
+  base(16,'#4a98d2');dot(16,'#7cc0ea',6);                             // 16 河水B
+  base(17,'#63cdc2');dot(17,'#9eeae2',7);dot(17,'#ffffff',2);         // 17 溫泉B
+  // ===== 室內 tiles =====
+  base(18,'#0c0c12');                                                  // 18 室內外虛空
+  base(19,'#c8945c');ctx.fillStyle='#b9854e';                          // 19 木地板
+  for(let y=6;y<32;y+=8)ctx.fillRect(19*T,y,T,2);
+  ctx.fillStyle='#a87844';ctx.fillRect(19*T+10,0,2,6);ctx.fillRect(19*T+22,16,2,6);
+  base(20,'#efe7cd');ctx.fillStyle='#d8c9a3';ctx.fillRect(20*T,24,T,8);// 20 牆＋踢腳板
+  ctx.fillStyle='#c9b88e';ctx.fillRect(20*T,24,T,2);
+  base(21,'#a9743f');ctx.fillStyle='#c08a4e';ctx.fillRect(21*T,0,T,10);// 21 櫃台
+  ctx.fillStyle='#7c5128';ctx.fillRect(21*T,26,T,6);
+  base(22,'#d96a4a');ctx.strokeStyle='#b8543a';ctx.strokeRect(22*T+2.5,2.5,27,27); // 22 地毯
+  ctx.fillStyle='#e4886c';ctx.fillRect(22*T+8,8,16,16);
+  base(23,'#c8945c');ctx.fillStyle='#6e4626';ctx.fillRect(23*T+6,24,4,6);ctx.fillRect(23*T+22,24,4,6); // 23 桌子
+  ctx.fillStyle='#8a5a33';ctx.fillRect(23*T+4,6,24,20);ctx.fillStyle='#a9743f';ctx.fillRect(23*T+4,6,24,16);
+  ctx.fillStyle='#c08a4e';ctx.fillRect(23*T+6,8,20,12);
+  base(24,'#e7eef2');ctx.fillStyle='#b9c6cc';ctx.fillRect(24*T,0,T,4); // 24 商品架
+  (()=>{const cs=['#e0533f','#f4c33f','#5a8fd0','#3f7d52','#ee7fa6','#9b59b6'];let ci=0;
+    for(let y=8;y<=22;y+=7)for(let x=3;x<=24;x+=7){ctx.fillStyle=cs[ci++%6];ctx.fillRect(24*T+x,y,5,5);}})();
+  base(25,'#c23b2e');ctx.strokeStyle='#8e2a20';ctx.strokeRect(25*T+3.5,5.5,25,21); // 25 出口地墊
+  ctx.fillStyle='#d96a4a';ctx.fillRect(25*T+8,12,16,8);
+  base(26,'#7d7257');ctx.fillStyle='#6a6049';ctx.fillRect(26*T,26,T,6);// 26 牆頂
+  base(27,'#c8945c');ctx.fillStyle='#5d7a96';ctx.fillRect(27*T+4,2,24,28); // 27 床
+  ctx.fillStyle='#f4f7f9';ctx.fillRect(27*T+6,4,20,9);ctx.fillStyle='#dfe7ea';ctx.fillRect(27*T+6,14,20,14);
+  base(28,'#c8945c');ctx.fillStyle='#b8543a';ctx.fillRect(28*T+10,20,12,9); // 28 盆栽
+  ctx.fillStyle='#2e7d3c';ctx.beginPath();ctx.arc(28*T+16,12,9,0,7);ctx.fill();
+  ctx.fillStyle='#3c934a';ctx.beginPath();ctx.arc(28*T+11,9,5,0,7);ctx.fill();
+  // 29 滑水道（彩色水管）
+  base(29,'#69d3c8');
+  ctx.strokeStyle='#f0a04b';ctx.lineWidth=7;ctx.beginPath();ctx.arc(29*T+8,16,11,0,7);ctx.stroke();
+  ctx.strokeStyle='#e0533f';ctx.lineWidth=6;ctx.beginPath();ctx.arc(29*T+24,10,9,0,7);ctx.stroke();
+  ctx.strokeStyle='#f4c33f';ctx.lineWidth=5;ctx.beginPath();ctx.arc(29*T+22,24,8,0,7);ctx.stroke();
+  // 30 彩虹戲水場（splash pad）
+  base(30,'#f0a04b');
+  (()=>{const cs=['#e0533f','#f4c33f','#3f7d52','#5a8fd0','#9b59b6'];
+    for(let i=0;i<5;i++){ctx.fillStyle=cs[i];ctx.fillRect(30*T+3+i*6,6,4,4);}
+    ctx.fillStyle='#7cc0ea';ctx.fillRect(30*T+6,18,6,6);ctx.fillRect(30*T+20,14,6,6);ctx.fillRect(30*T+14,24,6,5);})();
+  cv.refresh();
+}
+function shadeC(hex,f){
+  let h=hex.slice(1);if(h.length===3)h=h.split('').map(c=>c+c).join('');
+  const n=parseInt(h,16);
+  const r=Math.min(255,(((n>>16)&255)*f)|0),g=Math.min(255,(((n>>8)&255)*f)|0),b=Math.min(255,((n&255)*f)|0);
+  return 'rgb('+r+','+g+','+b+')';
+}
+function drawChar(ctx,ox,dir,step,pal){
+  // GBA 寶可夢風：輪廓線＋雙色陰影＋髮型/帽子/裙裝＋手臂擺動
+  const u=2;
+  const px=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(ox+x*u,y*u,w*u,h*u);};
+  const OUT='#2a2236';
+  const hair=pal.hair,hairHi=shadeC(hair,1.45),hairLo=shadeC(hair,.6);
+  const skin=pal.skin,skinLo=shadeC(skin,.78);
+  const shirt=pal.shirt,shirtHi=shadeC(shirt,1.28),shirtLo=shadeC(shirt,.64);
+  const pants=pal.pants,pantsLo=shadeC(pants,.6);
+  const shoe=pal.shoe||'#4a3424';
+  const lO=step===1?1:0,rO=step===2?1:0;          // 腿步伐
+  const aw=step===1?1:(step===2?-1:0);             // 手臂擺動
+
+  // ===== 頭部 =====
+  px(4,1,8,1,OUT);px(3,2,1,7,OUT);px(12,2,1,7,OUT);     // 輪廓
+  px(4,2,8,2,hair);px(5,2,3,1,hairHi);                  // 髮頂＋光澤
+  if(dir==='u'){
+    px(4,4,8,4,hair);px(4,7,8,1,hairLo);                // 後腦勺
+    if(pal.long){px(4,8,8,3,hair);px(4,10,8,1,hairLo);}
+    else px(6,8,4,1,skin);
+  }else{
+    px(4,4,8,1,hair);                                    // 瀏海
+    if(dir==='d'){
+      px(4,5,1,3,hair);px(11,5,1,3,hair);               // 鬢角
+      px(5,5,6,3,skin);px(5,8,6,1,skinLo);              // 臉
+      px(6,5,1,1,hair);px(9,5,1,1,hair);                // 瀏海齒
+      px(6,6,1,2,OUT);px(9,6,1,2,OUT);                  // 眼睛
+      px(5,7,1,1,'#e89a8e');px(10,7,1,1,'#e89a8e');     // 腮紅
+    }else if(dir==='l'){
+      px(8,5,4,4,hair);px(8,8,4,1,hairLo);              // 後腦
+      px(4,5,4,3,skin);px(4,8,4,1,skinLo);              // 臉
+      px(5,6,1,2,OUT);                                   // 眼
+    }else{
+      px(4,5,4,4,hair);px(4,8,4,1,hairLo);
+      px(8,5,4,3,skin);px(8,8,4,1,skinLo);
+      px(10,6,1,2,OUT);
+    }
+    if(pal.long){px(3,6,1,6,hair);px(12,6,1,6,hair);px(3,11,1,1,hairLo);px(12,11,1,1,hairLo);} // 長髮垂肩
+  }
+  if(pal.spiky&&!pal.hat){px(4,0,1,1,hair);px(7,0,2,1,hair);px(11,0,1,1,hair);} // 刺蝟髮
+  if(pal.hat){                                           // 帽子
+    const hatLo=shadeC(pal.hat,.68),hatHi=shadeC(pal.hat,1.3);
+    px(4,0,8,1,OUT);px(4,1,8,2,pal.hat);px(5,1,3,1,hatHi);
+    if(dir==='d')px(3,3,10,1,hatLo);
+    else if(dir==='l')px(2,3,8,1,hatLo);
+    else if(dir==='r')px(6,3,8,1,hatLo);
+    else px(4,3,8,1,hatLo);
+  }
+  // ===== 脖子 =====
+  px(7,9,2,1,skin);
+  // ===== 身體 =====
+  px(4,10,8,6,shirt);
+  px(4,10,1,6,shirtHi);                                  // 左側亮
+  px(10,10,2,6,shirtLo);                                 // 右側陰影
+  px(6,10,4,1,shirtLo);                                  // 領口
+  px(4,16,8,1,pal.skirt?shadeC(pal.skirt,.8):shadeC(pants,.85)); // 腰帶
+  // 手臂（隨步伐前後擺動）
+  px(3,10+aw,1,4,shirt);px(3,14+aw,1,2,skin);
+  px(12,10-aw,1,4,shirtLo);px(12,14-aw,1,2,skinLo);
+  // ===== 下半身 =====
+  if(pal.skirt){
+    const sk=pal.skirt,skLo=shadeC(sk,.62);
+    px(4,17,8,1,sk);px(3,18,10,1,sk);px(3,19,10,1,skLo); // 裙擺
+    px(5,20,2,2-lO,skin);px(9,20,2,2-rO,skin);           // 腿
+    px(5,22-lO,2,2,shoe);px(9,22-rO,2,2,shoe);
+  }else{
+    px(5,17,2,5-lO,pants);px(9,17,2,5-rO,pants);
+    px(6,17,1,5-lO,pantsLo);px(10,17,1,5-rO,pantsLo);    // 褲子陰影
+    px(5,22-lO,2,2,shoe);px(9,22-rO,2,2,shoe);
+    px(5,23-lO,2,1,shadeC(shoe,.55));px(9,23-rO,2,1,shadeC(shoe,.55));
+  }
+}
+function makeCharTexture(scene,key,pal){
+  const fw=32,fh=48;
+  const cv=scene.textures.createCanvas(key,fw*12,fh);
+  const ctx=cv.getContext();
+  const dirs=['d','l','r','u'];
+  for(let d=0;d<4;d++)for(let s=0;s<3;s++)drawChar(ctx,(d*3+s)*fw,dirs[d],s,pal);
+  cv.refresh();
+  // 注意：不要加整張底圖 frame！它會變成 firstFrame，導致 frame 0 fallback 成整排分身
+  for(let f=0;f<12;f++)scene.textures.get(key).add(f,0,f*fw,0,fw,fh);
+}
+
+// ---------- 地圖（依真實 Hanmer Springs Google/實測地圖佈局）----------
+const MW=64,MH=48,MHT=416; // MH=戶外高度，MHT=含室內區與溫泉園區總高度
+// 室內房間（藏在地圖南側 48 列以下，鏡頭進房間時只看得到房間）
+// cafe2/lodge2 是共用模板：多家餐廳／旅宿共用同一種室內
+// 每間房獨立一層、上下相隔 36 格，任何螢幕尺寸的鏡頭都不會拍到別間
+const INTERIORS={
+  cafe:      {x0:25,y0:50, w:13,h:12},
+  dairy:     {x0:25,y0:86, w:12,h:12},
+  isite:     {x0:25,y0:122,w:12,h:12},
+  hostel:    {x0:25,y0:158,w:14,h:12},
+  spa:       {x0:25,y0:194,w:9, h:10},
+  monteiths: {x0:25,y0:230,w:13,h:12},
+  no31:      {x0:25,y0:266,w:13,h:12},
+  cafe2:     {x0:25,y0:302,w:12,h:12},
+  lodge2:    {x0:25,y0:338,w:12,h:12},
+  pools:     {x0:2, y0:380,w:60,h:28,spawn:[11,385]} // ♨ 溫泉園區（戶外風格大地圖）
+};
+// 建築物：door=戶外門 tile；out=走出來站的位置；room=室內房型
+const BUILDINGS=[
+  {room:'cafe',     door:[36,23],out:[36,24.4],  label:'☕ Fire & Ice Café（37 Amuri Ave）'},
+  {room:'dairy',    door:[36,10],out:[36,11.4],  label:'🛒 Four Square 超市（12 Conical Hill Rd）'},
+  {room:'isite',    door:[27,28],out:[27,29.4],  label:'ℹ️ i-SITE 遊客中心'},
+  {room:'hostel',   door:[36,27],out:[36,28.4],  label:'🛏 Kakapo Lodge（14 Amuri Ave）'},
+  {room:'spa',      door:[28,19],out:[29.2,19.5],label:'♨ 溫泉接待處（42 Amuri Ave）'},
+  {room:'pools',    door:[28,21],out:[29.2,21.5],label:'♨ 歡迎光臨溫泉園區！玩累了踩入口的紅色地墊離場'},
+  {room:'monteiths',door:[36,17],out:[36,18.4],  label:'🍺 Monteith\'s Brewery Bar（47 Amuri Ave）'},
+  {room:'no31',     door:[43,23],out:[43,24.4],  label:'🍽 No.31 Restaurant & Bar（31 Amuri Ave）'},
+  {room:'cafe2',    door:[43,17],out:[43,18.4],  label:'🍛 Spice Village（47 Amuri Ave）'},
+  {room:'cafe2',    door:[24,12],out:[24,13.4],  label:'☕ Powerhouse Café（8 Jacks Pass Rd）'},
+  {room:'cafe2',    door:[27,10],out:[27,11.4],  label:'🍴 Saints Café（Village Shopping Centre）'},
+  {room:'cafe2',    door:[35,31],out:[35,32.4],  label:'🥘 Rustic Café & Tapas Bar（Amuri Ave）'},
+  {room:'cafe2',    door:[40,31],out:[40,32.4],  label:'🥐 Hanmer Springs Bakery'},
+  {room:'cafe2',    door:[45,31],out:[45,32.4],  label:'🦌 Five Stags（2 Fraser Close）'},
+  {room:'cafe2',    door:[43,27],out:[43,28.4],  label:'🍬 The Decadent Fudge Co'},
+  {room:'lodge2',   door:[27,33],out:[27,34.4],  label:'🏨 EDIT Hanmer Springs Hotel（41 Amuri Ave）'},
+  {room:'lodge2',   door:[48,23],out:[48,24.4],  label:'🛏 Drifters Inn（2 Harrogate St）'},
+  {room:'lodge2',   door:[42,6], out:[42,7.4],   label:'🏨 The St James'},
+  {room:'lodge2',   door:[36,6], out:[36,7.4],   label:'🏨 Village Lake Apartments'},
+  {room:'lodge2',   door:[16,12],out:[16,13.4],  label:'🏡 Chalets Motel（Conical Hill Rd）'},
+  {room:'lodge2',   door:[26,38],out:[26,39.4],  label:'🛏 ASURE Hanmer Inn Motel'},
+  {room:'lodge2',   door:[36,40],out:[36,41.4],  label:'⛺ TOP 10 Holiday Park（5 Hanmer Springs Rd）'},
+  {room:'lodge2',   door:[8,12], out:[8,13.4],   label:'⛺ Alpine Adventure Holiday Park（Jacks Pass Rd）'},
+  {room:'lodge2',   door:[22,40],out:[22,41.4],  label:'⛺ Pines Holiday Park（Argelins Rd）'}
+];
+const DOORS={};BUILDINGS.forEach(b=>{DOORS[b.door[0]+','+b.door[1]]=b;});
+function buildGrid(){
+  const g=Array.from({length:MHT},()=>Array(MW).fill(0));
+  const rect=(x,y,w,h,v)=>{for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)if(j>=0&&j<MHT&&i>=0&&i<MW)g[j][i]=v;};
+  // 室內區底色：虛空
+  rect(0,MH,MW,MHT-MH,18);
+  // 邊界樹林
+  rect(0,0,MW,1,4);rect(0,MH-1,MW,1,4);rect(0,0,1,MH,4);rect(MW-1,0,1,MH,4);
+  // ===== 依真實地圖：自然地景先畫 =====
+  // 北邊：Conical Hill 森林帶
+  rect(1,1,MW-2,6,4);
+  // Dog Stream（東側，蜿蜒南北向）
+  for(let y=1;y<MH-1;y++){const x=53+Math.round(Math.sin(y*0.3)*2);rect(x,y,3,1,3);}
+  // Hanmer Forest（河東側）＋ 野餐空地
+  rect(57,1,6,46,4);rect(57,13,5,3,0);rect(57,22,5,6,0);rect(58,23,2,2,2);rect(60,25,1,1,9);
+  // Woodlands Ponds（東北）
+  rect(44,4,7,4,0);rect(45,5,5,2,3);g[4][44]=4;g[7][50]=4;
+  // 高爾夫球場（西南，Argelins Rd 側）
+  rect(3,34,15,12,8);rect(6,38,2,2,13);rect(13,42,2,2,13);rect(4,35,2,2,4);rect(15,44,2,2,4);
+  // The Domain 公園（西側：網球場/滑板場）
+  rect(12,27,11,7,0);
+  rect(13,28,4,3,11);                                 // 網球場
+  rect(19,31,3,2,9);g[28][22]=4;g[33][12]=4;          // 花圃與樹
+  // ===== 道路網（依真實街道）=====
+  rect(30,2,3,5,2);                 // Conical Hill 觀景台步道
+  rect(28,1,7,3,11);g[1][28]=12;g[1][34]=12;          // 觀景台
+  rect(30,7,3,7,1);                 // Conical Hill Rd（北段）
+  rect(30,14,3,30,1);               // Amuri Ave（主街，南接 Hanmer Springs Rd）
+  rect(33,12,30,1,1);               // Jollies Pass Rd（往東，過橋進 Hanmer Forest）
+  rect(6,13,24,1,1);                // Jacks Pass Rd（往西北）
+  rect(33,20,18,1,1);               // Cheltenham St
+  rect(33,24,18,1,1);               // Harrogate St
+  rect(33,28,18,1,1);               // Leamington St
+  rect(33,32,18,1,1);               // Bath St
+  rect(50,20,1,13,1);               // Scarborough Tce（東側南北向）
+  rect(23,30,7,1,2);                // Domain 入口小徑
+  // ===== 店家建築（真實店名與位置）=====
+  // Four Square 超市（12 Conical Hill Rd，路東側）
+  rect(34,8,6,2,14);rect(34,10,6,1,5);g[10][36]=15;rect(34,11,6,1,2);g[11][33]=2;
+  // Powerhouse Café（8 Jacks Pass Rd，路北側）
+  rect(22,10,6,2,6);rect(22,12,6,1,5);g[12][24]=15;
+  // 溫泉水療中心（42 Amuri Ave，路西側大園區）
+  rect(9,15,20,10,0);
+  rect(9,15,20,1,10);rect(9,24,20,1,10);rect(9,15,1,10,10);rect(28,15,1,10,10);
+  rect(11,17,5,3,7);rect(18,17,4,4,7);rect(11,21,4,3,7);rect(19,22,5,2,7); // 溫泉池
+  rect(16,20,2,2,11);rect(10,22,2,2,12);              // 木棧板＋假山
+  g[19][28]=15;g[19][29]=2;                           // 接待處門（東牆面向 Amuri）＋門前小徑
+  g[21][28]=15;g[22][28]=10;rect(29,21,1,2,2);        // 園區大門（買票後走進去）
+  // Amuri Ave 東側商店街（門朝南，面向各橫街）
+  // 北街區（Jollies—Cheltenham）：Monteith's ＋ Spice Village
+  rect(34,15,6,2,6);rect(34,17,6,1,5);g[17][36]=15;
+  rect(41,15,6,2,14);rect(41,17,6,1,5);g[17][43]=15;   // Spice Village
+  rect(34,18,13,1,2);g[18][33]=2;                      // 店前人行道接 Amuri
+  // 中街區（Cheltenham—Harrogate）：Fire & Ice ＋ No.31 ＋ Drifters Inn
+  rect(34,21,6,2,6);rect(34,23,6,1,5);g[23][36]=15;
+  rect(41,21,6,2,14);rect(41,23,6,1,5);g[23][43]=15;
+  rect(47,21,3,2,14);rect(47,23,3,1,5);g[23][48]=15;   // Drifters Inn（2 Harrogate St）
+  // 南街區（Harrogate—Leamington）：Kakapo Lodge ＋ The Decadent Fudge Co
+  rect(34,25,6,2,14);rect(34,27,6,1,5);g[27][36]=15;
+  rect(41,25,5,2,6);rect(41,27,5,1,5);g[27][43]=15;    // Fudge 店
+  // Bath St 北側：Rustic ＋ Bakery ＋ Five Stags
+  rect(34,29,4,2,6);rect(34,31,4,1,5);g[31][35]=15;    // Rustic Café & Tapas Bar
+  rect(39,29,4,2,14);rect(39,31,4,1,5);g[31][40]=15;   // Hanmer Springs Bakery
+  rect(44,29,4,2,6);rect(44,31,4,1,5);g[31][45]=15;    // Five Stags
+  // i-SITE 遊客中心（溫泉入口旁西側）
+  rect(24,26,6,2,14);rect(24,28,6,1,5);g[28][27]=15;rect(24,29,6,1,2);rect(29,29,1,1,2);
+  // ===== 住宿（依真實位置近似擺放）=====
+  // Village Lake Apartments ＋ The St James（Conical Hill Rd 北側，林間空地）
+  rect(34,4,5,2,14);rect(34,6,5,1,5);g[6][36]=15;
+  rect(40,4,5,2,14);rect(40,6,5,1,5);g[6][42]=15;
+  rect(34,7,11,1,0);                                   // 門前空地
+  // Saints Café／Village Shopping Centre（24 Conical Hill Rd，路西側）
+  rect(24,8,6,2,6);rect(24,10,6,1,5);g[10][27]=15;rect(24,11,6,1,2);
+  // Chalets Motel（Jacks Pass Rd 北側）
+  rect(14,10,5,2,14);rect(14,12,5,1,5);g[12][16]=15;
+  // Alpine Adventure Holiday Park（Jacks Pass Rd 西端）
+  rect(6,10,5,2,6);rect(6,12,5,1,5);g[12][8]=15;
+  // EDIT Hanmer Springs Hotel（41 Amuri Ave，路西側）
+  rect(24,31,6,2,14);rect(24,33,6,1,5);g[33][27]=15;rect(27,34,3,1,2);
+  // ASURE Hanmer Inn Motel（路西側南段）
+  rect(24,36,5,2,14);rect(24,38,5,1,5);g[38][26]=15;rect(26,39,4,1,2);
+  // TOP 10 Holiday Park（5 Hanmer Springs Rd）
+  rect(34,38,6,2,6);rect(34,40,6,1,5);g[40][36]=15;rect(33,41,6,1,2);
+  // Pines Holiday Park（Argelins Rd 方向）
+  rect(20,38,5,2,14);rect(20,40,5,1,5);g[40][22]=15;rect(22,41,1,1,2);
+  // Brooke Dawson 公園（Scarborough Tce 東側沿河）
+  rect(44,34,8,8,0);rect(45,35,2,2,9);rect(49,38,2,2,9);g[36][47]=4;g[35][50]=4;
+  // Tarndale Reserve（南側）
+  rect(36,44,9,3,0);rect(37,45,2,1,9);g[44][42]=4;
+  // 南口巴士站（Hanmer Springs Rd 往 Christchurch）
+  rect(33,42,2,2,11);
+  // ===== 室內房間 =====
+  for(const k in INTERIORS){
+    if(k==='pools')continue;
+    const R=INTERIORS[k];
+    rect(R.x0,R.y0,R.w,R.h,19);                                   // 木地板
+    rect(R.x0,R.y0,R.w,1,26);rect(R.x0,R.y0+1,R.w,1,20);          // 上牆
+    rect(R.x0,R.y0,1,R.h,20);rect(R.x0+R.w-1,R.y0,1,R.h,20);      // 側牆
+    rect(R.x0,R.y0+R.h-1,R.w,1,20);                               // 下牆
+    g[R.y0+R.h-2][R.x0+(R.w>>1)]=25;                              // 出口地墊
+  }
+  let R=INTERIORS.cafe;     // ☕ 咖啡店：吧台＋座位區
+  rect(R.x0+2,R.y0+3,7,1,21);                                     // 吧台
+  rect(R.x0+10,R.y0+2,2,3,24);                                    // 蛋糕櫃
+  g[R.y0+6][R.x0+3]=23;g[R.y0+8][R.x0+3]=23;g[R.y0+6][R.x0+8]=23; // 桌子
+  rect(R.x0+5,R.y0+6,2,3,22);                                     // 地毯
+  g[R.y0+2][R.x0+1]=28;g[R.y0+8][R.x0+11]=28;                     // 盆栽
+  R=INTERIORS.dairy;        // 🏪 便利店：貨架排列
+  rect(R.x0+2,R.y0+3,3,1,21);                                     // 收銀台
+  rect(R.x0+7,R.y0+3,3,1,24);rect(R.x0+2,R.y0+6,3,1,24);          // 貨架
+  rect(R.x0+7,R.y0+6,3,1,24);rect(R.x0+2,R.y0+8,8,1,24);
+  g[R.y0+2][R.x0+10]=28;
+  R=INTERIORS.isite;        // ℹ️ i-SITE：服務台＋簡介架
+  rect(R.x0+3,R.y0+3,6,1,21);
+  rect(R.x0+1,R.y0+2,1,2,24);rect(R.x0+10,R.y0+2,1,2,24);         // 簡介架
+  rect(R.x0+4,R.y0+6,4,3,22);g[R.y0+8][R.x0+2]=23;
+  g[R.y0+8][R.x0+9]=28;
+  R=INTERIORS.hostel;       // 🛏 背包客棧：床位區
+  rect(R.x0+2,R.y0+3,4,1,21);                                     // 接待櫃台
+  g[R.y0+3][R.x0+8]=27;g[R.y0+3][R.x0+11]=27;                     // 床
+  g[R.y0+6][R.x0+8]=27;g[R.y0+6][R.x0+11]=27;
+  g[R.y0+8][R.x0+2]=27;g[R.y0+8][R.x0+5]=27;
+  rect(R.x0+3,R.y0+6,3,2,22);g[R.y0+2][R.x0+12]=28;
+  R=INTERIORS.spa;          // ♨ 溫泉接待處
+  rect(R.x0+2,R.y0+3,3,1,21);
+  g[R.y0+2][R.x0+5]=24;g[R.y0+5][R.x0+5]=28;rect(R.x0+2,R.y0+5,2,2,22);
+  R=INTERIORS.monteiths;    // 🍺 Monteith's：長吧台＋座位
+  rect(R.x0+2,R.y0+3,8,1,21);                                     // 長吧台
+  rect(R.x0+11,R.y0+2,1,3,24);                                    // 酒架
+  g[R.y0+6][R.x0+3]=23;g[R.y0+8][R.x0+5]=23;g[R.y0+6][R.x0+9]=23; // 桌子
+  rect(R.x0+5,R.y0+6,3,2,22);g[R.y0+8][R.x0+11]=28;
+  R=INTERIORS.no31;         // 🍽 No.31：精緻餐廳
+  rect(R.x0+4,R.y0+3,5,1,21);                                     // 出餐台
+  g[R.y0+5][R.x0+2]=23;g[R.y0+5][R.x0+6]=23;g[R.y0+5][R.x0+10]=23;
+  g[R.y0+8][R.x0+4]=23;g[R.y0+8][R.x0+8]=23;
+  rect(R.x0+5,R.y0+6,3,2,22);g[R.y0+2][R.x0+1]=28;g[R.y0+2][R.x0+11]=28;
+  R=INTERIORS.cafe2;        // ☕ 共用餐廳模板
+  rect(R.x0+2,R.y0+3,5,1,21);                                     // 櫃台
+  rect(R.x0+8,R.y0+2,2,2,24);                                     // 展示櫃
+  g[R.y0+6][R.x0+3]=23;g[R.y0+6][R.x0+8]=23;g[R.y0+8][R.x0+5]=23; // 桌子
+  rect(R.x0+5,R.y0+6,2,2,22);g[R.y0+2][R.x0+1]=28;
+  R=INTERIORS.lodge2;       // 🛏 共用旅宿模板
+  rect(R.x0+2,R.y0+3,4,1,21);                                     // 接待櫃台
+  g[R.y0+3][R.x0+8]=27;g[R.y0+3][R.x0+10]=27;                     // 床
+  g[R.y0+6][R.x0+8]=27;g[R.y0+6][R.x0+10]=27;
+  rect(R.x0+3,R.y0+6,3,2,22);g[R.y0+2][R.x0+6]=28;
+
+  // ===== ♨ 溫泉園區（依官方園區圖重現 12 區）=====
+  {
+    const P=INTERIORS.pools,X=P.x0,Y=P.y0;
+    const pr=(x,y,w,h,v)=>rect(X+x,Y+y,w,h,v);
+    const pg=(x,y,v)=>{g[Y+y][X+x]=v;};
+    pr(0,0,P.w,P.h,0);                                  // 草地底
+    pr(0,0,P.w,1,4);pr(0,P.h-1,P.w,1,4);pr(0,0,1,P.h,4);pr(P.w-1,0,1,P.h,4); // 樹籬圍界
+    // 入口建築（ENTRY & EXIT，西北）
+    pr(4,1,10,2,14);pr(4,3,10,1,5);
+    pr(4,4,12,3,11);pg(8,4,25);pg(9,4,25);              // 入口廣場＋出口地墊（兩格）
+    // 園區步道
+    pr(15,5,2,18,11);pr(4,11,52,2,11);pr(30,13,2,10,11);pr(17,22,32,2,11);pr(44,9,2,3,11);
+    // 1 硫磺池＆冷泉（西北）
+    pr(5,7,3,2,7);pr(9,7,2,2,17);
+    // 12 瀑布石園池 Cascade Pools（西）
+    pr(4,14,6,4,7);pg(3,14,12);pg(8,17,12);pg(5,13,12);
+    // 2 水療池 Aquatherapy
+    pr(19,6,3,2,7);
+    // 3 冥想池 Meditational（花圃環繞）
+    pr(24,5,3,2,7);pg(23,4,9);pg(27,7,9);pg(23,7,9);
+    // 4 私人池・蒸氣＆桑拿（兩棟小屋）
+    pr(34,4,3,2,6);pr(34,6,3,1,5);pr(38,4,3,2,6);pr(38,6,3,1,5);
+    // 5 淡水池＆Lazy River（東北環形）
+    pr(44,3,12,6,7);pr(46,5,8,2,0);pg(47,5,9);pg(52,6,9);
+    // 11 活動池（中央）
+    pr(20,13,6,3,7);pg(22,14,12);
+    // 6/7 滑水道塔（東）＋落水池
+    pr(52,10,5,4,29);pr(48,12,3,2,7);pg(51,9,12);
+    // 9 家庭活動池
+    pr(36,16,5,3,7);
+    // 10 Waiau Winder 漩渦滑道＋漩渦池
+    pr(56,15,2,3,29);pr(52,17,4,3,7);
+    // 8 彩虹戲水場（東南）＋岩石池
+    pr(46,22,6,3,30);pr(41,22,3,2,7);pg(40,21,12);
+    // Tea Kiosk（中南）
+    pr(26,15,6,2,6);pr(26,17,6,1,5);
+    // 更衣室 Changing Rooms
+    pr(34,20,7,2,14);pr(34,22,7,1,5);
+    // 造景
+    pg(18,4,4);pg(43,14,4);pg(12,20,4);pg(57,21,4);pg(28,9,9);pg(33,10,9);pg(45,20,9);
+  }
+  return g;
+}
+
+
+// ---------- 裝飾材質與小鎮氛圍 ----------
+let glows=[],steamSpots=[],waterFlip=false;
+function makeDecorTextures(scene){
+  let cv=scene.textures.createCanvas('lamp',16,44),c=cv.getContext();
+  c.fillStyle='#4a4a4a';c.fillRect(7,8,3,34);c.fillRect(3,40,11,4);
+  c.fillStyle='#2f2f2f';c.fillRect(4,1,9,9);
+  c.fillStyle='#ffe9a8';c.fillRect(5,2,7,7);cv.refresh();
+  cv=scene.textures.createCanvas('bench',30,16);c=cv.getContext();
+  c.fillStyle='#8a6238';c.fillRect(1,2,28,5);c.fillRect(1,9,28,4);
+  c.fillStyle='#5f4426';c.fillRect(3,13,3,3);c.fillRect(24,13,3,3);cv.refresh();
+  cv=scene.textures.createCanvas('steam',24,24);c=cv.getContext();
+  const gr=c.createRadialGradient(12,12,2,12,12,12);
+  gr.addColorStop(0,'rgba(255,255,255,.9)');gr.addColorStop(1,'rgba(255,255,255,0)');
+  c.fillStyle=gr;c.fillRect(0,0,24,24);cv.refresh();
+  cv=scene.textures.createCanvas('glow',64,64);c=cv.getContext();
+  const g2=c.createRadialGradient(32,32,4,32,32,32);
+  g2.addColorStop(0,'rgba(255,220,140,.5)');g2.addColorStop(1,'rgba(255,220,140,0)');
+  c.fillStyle=g2;c.fillRect(0,0,64,64);cv.refresh();
+  cv=scene.textures.createCanvas('shadow',24,10);c=cv.getContext();
+  c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.ellipse(12,5,11,4,0,0,7);c.fill();cv.refresh();
+  cv=scene.textures.createCanvas('ripple',40,18);c=cv.getContext();
+  c.strokeStyle='rgba(255,255,255,.75)';c.lineWidth=2;
+  c.beginPath();c.ellipse(20,9,16,6,0,0,7);c.stroke();
+  c.strokeStyle='rgba(255,255,255,.4)';
+  c.beginPath();c.ellipse(20,9,10,3.5,0,0,7);c.stroke();cv.refresh();
+
+  // 🚲 腳踏車：側面（給左右方向，向右；向左用 flipX）
+  cv=scene.textures.createCanvas('bikeSide',32,24);c=cv.getContext();
+  const sWheel=(cx,cy,r)=>{
+    c.fillStyle='#1b1b1b';c.beginPath();c.arc(cx,cy,r,0,7);c.fill();        // 外胎
+    c.fillStyle='#5a5a5a';c.beginPath();c.arc(cx,cy,r-2,0,7);c.fill();      // 鋼圈
+    c.strokeStyle='#9a9a9a';c.lineWidth=1;                                  // 輻條
+    for(let a=0;a<6;a++){c.beginPath();c.moveTo(cx,cy);c.lineTo(cx+Math.cos(a)*(r-2),cy+Math.sin(a)*(r-2));c.stroke();}
+    c.fillStyle='#cfcfcf';c.beginPath();c.arc(cx,cy,1.8,0,7);c.fill();      // 花鼓
+  };
+  c.strokeStyle='#e23b2e';c.lineWidth=2;c.lineCap='round';                  // 紅色車架
+  c.beginPath();
+  c.moveTo(7,16);c.lineTo(16,16);c.lineTo(25,16);                           // 下管
+  c.moveTo(16,16);c.lineTo(13,7);c.lineTo(23,7);c.lineTo(25,16);            // 座管・上管・頭管
+  c.moveTo(13,7);c.lineTo(7,16);                                            // 後上叉
+  c.stroke();
+  c.strokeStyle='#c9302a';c.beginPath();c.moveTo(23,7);c.lineTo(25,4);c.stroke(); // 龍頭
+  c.fillStyle='#222';c.fillRect(24,3,5,2);                                  // 手把
+  c.fillStyle='#222';c.fillRect(9,4,6,2);c.fillRect(11,3,3,2);             // 座墊
+  c.fillStyle='#3a3a3a';c.fillRect(15,16,2,4);                              // 曲柄
+  sWheel(7,16,6);sWheel(25,16,6);
+  cv.refresh();
+
+  // 🚲 腳踏車：正/背面（給上下方向）
+  cv=scene.textures.createCanvas('bikeFront',18,24);c=cv.getContext();
+  c.fillStyle='#1b1b1b';c.fillRect(7,5,4,16);                               // 前輪側影
+  c.fillStyle='#5a5a5a';c.fillRect(8,6,2,14);
+  c.strokeStyle='#e23b2e';c.lineWidth=2;c.lineCap='round';
+  c.beginPath();c.moveTo(9,7);c.lineTo(9,18);c.stroke();                    // 立管
+  c.fillStyle='#222';c.fillRect(2,5,14,2);c.fillRect(2,4,3,4);c.fillRect(13,4,3,4); // 手把
+  c.fillStyle='#222';c.fillRect(6,16,6,2);                                  // 踏板
+  cv.refresh();
+}
+function decor(scene){
+  // 路燈（沿 Amuri Ave 與 Harrogate St）
+  [[29,16],[33,19],[29,22],[33,26],[29,30],[33,34],[29,38],[33,41],[36,13],[46,13],[40,21],[46,25],[40,29],[24,14],[12,14],[31,8]].forEach(p=>{
+    const x=p[0]*32+16,y=p[1]*32+16;
+    scene.add.image(x,y-14,'lamp').setDepth(y);
+    glows.push(scene.add.image(x,y-34,'glow').setDepth(15000).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setScale(1.6));
+  });
+  // 長椅
+  [[33.5,14],[29,25.5],[58.5,23.5],[31.8,2.7],[46,33.5]].forEach(p=>scene.add.image(p[0]*32+16,p[1]*32+16,'bench').setDepth(p[1]*32+16));
+  // 溫泉蒸氣
+  scene.time.addEvent({delay:420,loop:true,callback:()=>{
+    if(steamSpots.length===0)
+      layer.forEachTile(t=>{if(t.index===7||t.index===17)steamSpots.push([t.getCenterX(),t.getCenterY()]);});
+    if(steamSpots.length===0)return;
+    const sp=steamSpots[(Math.random()*steamSpots.length)|0];
+    const st=scene.add.image(sp[0]+(Math.random()*16-8),sp[1],'steam').setAlpha(.3).setDepth(16000).setScale(.7);
+    scene.tweens.add({targets:st,y:sp[1]-26,alpha:0,scale:1.5,duration:2400,onComplete:()=>st.destroy()});
+  }});
+  // 動態水面
+  scene.time.addEvent({delay:700,loop:true,callback:()=>{
+    waterFlip=!waterFlip;
+    if(waterFlip){layer.replaceByIndex(3,16);layer.replaceByIndex(7,17);}
+    else{layer.replaceByIndex(16,3);layer.replaceByIndex(17,7);}
+  }});
+}
+
+// ---------- Phaser 場景 ----------
+let scn=null,player=null,layer=null,nightRect=null,zones=[],npcs=[];
+const SOLID=[3,4,5,6,10,12,14,18,20,21,23,24,26,27,28,29]; // 門(15)可走入；29=滑水道結構
+const SOLIDSET=new Set(SOLID);
+
+// ---------- 室內進出 ----------
+let curInterior=null,curBld=null,transit=false,autoPath=null;
+function fitCam(){
+  // 鏡頭縮放：室內放大到填滿畫面（寶可夢感），戶外確保不露出地圖外
+  if(!scn)return;
+  const cam=scn.cameras.main,W=scn.scale.width,H=scn.scale.height;
+  if(curInterior){
+    cam.setZoom(curInterior==='pools'
+      ?Math.min(2.4,Math.max(1.7,W/980))
+      :Math.min(2.8,Math.max(1.7,W/720)));
+  }else{
+    cam.setZoom(Math.max(1,W/(MW*32),H/(MH*32)));
+  }
+}
+function enterInterior(b){
+  if(b.room==='pools'&&!S.poolPass){
+    player.setPosition(b.out[0]*32+16,b.out[1]*32);
+    toast('🎫 需要溫泉門票！先到旁邊的 ♨ 接待處找 Mia 買票（$15）');
+    return;
+  }
+  const R=INTERIORS[b.room];transit=true;autoPath=null;SND.blip();
+  scn.cameras.main.fadeOut(180,0,0,0);
+  scn.time.delayedCall(200,()=>{
+    curInterior=b.room;curBld=b;
+    const sp=R.spawn||[R.x0+(R.w>>1),R.y0+R.h-3];
+    player.setPosition(sp[0]*32+16,sp[1]*32+16);
+    scn.cameras.main.setBounds(R.x0*32,R.y0*32,R.w*32,R.h*32);
+    fitCam();
+    toast(b.label);
+    scn.cameras.main.fadeIn(180,0,0,0);
+    scn.time.delayedCall(240,()=>transit=false);
+  });
+}
+function exitInterior(){
+  const b=curBld;transit=true;SND.blip();
+  scn.cameras.main.fadeOut(180,0,0,0);
+  scn.time.delayedCall(200,()=>{
+    curInterior=null;curBld=null;
+    player.setPosition(b.out[0]*32+16,b.out[1]*32);
+    scn.cameras.main.setBounds(0,0,MW*32,MH*32);
+    fitCam();
+    scn.cameras.main.fadeIn(180,0,0,0);
+    scn.time.delayedCall(240,()=>transit=false);
+  });
+}
+// ---------- ♨ 溫泉園區互動 ----------
+function teaKiosk(){
+  if(S.money<6){toast('💸 錢不夠（熱可可 $6）');return;}
+  S.money-=6;S.hunger=Math.min(100,S.hunger+12);S.mood=Math.min(100,S.mood+8);
+  SND.coin();SND.eat();toast('☕ 熱可可下肚，泡完湯喝這個最幸福！');ui();
+}
+function rideSlide(){
+  if(S.energy<8){toast('⚡ 太累了，爬不上滑水道的樓梯…');return;}
+  S.energy=Math.max(0,S.energy-8);S.mood=Math.min(100,S.mood+15);
+  SND.splash();toast('🛝 咻——Conical Thrill 衝下來，水花超大！');ui();
+}
+function rideVortex(){
+  S.mood=Math.min(100,S.mood+10);S.energy=Math.min(100,S.energy+3);
+  SND.splash();toast('🌀 Waiau Winder 漩渦轉轉轉～停不下來！');ui();
+}
+function doSauna(){
+  S.mood=Math.min(100,S.mood+8);S.energy=Math.min(100,S.energy+6);
+  SND.sleep();toast('🧖 蒸氣桑拿，毛孔全開，整個人放鬆了…');ui();
+}
+function doMeditate(){
+  S.mood=Math.min(100,S.mood+12);SND.ok();
+  toast('🧘 在冥想池畔深呼吸……內心一片平靜');ui();
+}
+
+// ---------- 🧭 導航：BFS 找路＋自動走 ----------
+function navTo(tx,ty){
+  closeOv();
+  if(curInterior){toast('🧭 先踩紅色地墊走出室內，再使用導航');return;}
+  tx=Math.round(tx);ty=Math.round(ty);
+  const sx=Math.floor(player.x/32),sy=Math.floor(player.y/32);
+  const sol=new Set(SOLID);
+  const prev=new Int32Array(MW*MH).fill(-1);
+  const start=sy*MW+sx;prev[start]=start;
+  const q=[start];let found=(sx===tx&&sy===ty);
+  for(let qi=0;qi<q.length&&!found;qi++){
+    const c=q[qi],cx=c%MW,cy=(c/MW)|0;
+    for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=cx+d[0],ny=cy+d[1];
+      if(nx<0||ny<0||nx>=MW||ny>=MH)continue;
+      const n=ny*MW+nx;
+      if(prev[n]!==-1)continue;
+      const t=layer.getTileAt(nx,ny);
+      if(!t||sol.has(t.index))continue;
+      prev[n]=c;q.push(n);
+      if(nx===tx&&ny===ty){found=true;break;}
+    }
+  }
+  if(!found){toast('🧭 找不到路徑');return;}
+  const path=[];let c=ty*MW+tx;
+  while(c!==start){path.push([(c%MW)*32+16,((c/MW)|0)*32+16]);c=prev[c];}
+  path.reverse();
+  autoPath=path.length?path:null;
+  if(autoPath)toast('🧭 自動前往中…（按方向鍵可取消）');
+}
+
+function create(){
+  scn=this;
+  makeTiles(this);
+  makeDecorTextures(this);
+  const PALS=[
+    {skin:'#f6cfa4',hair:'#6b4226',shirt:'#e0533f',pants:'#34537e',spiky:true,shoe:'#7a3328'},          // 紅衣冒險家
+    {skin:'#eebd92',hair:'#23211f',shirt:'#3f7d52',pants:'#3b3b3b',hat:'#d9543f'},                      // 紅帽訓練家
+    {skin:'#f8dcc0',hair:'#e8b94f',shirt:'#5a8fd0',pants:'#34537e',long:true,skirt:'#3f6aa8'},          // 金髮長裙
+    {skin:'#b97a4b',hair:'#191512',shirt:'#f4c33f',pants:'#2e4a66',spiky:true},                         // 黃衣陽光男
+    {skin:'#f6cfa4',hair:'#7e57c2',shirt:'#9b59b6',pants:'#332f3a',shoe:'#3a2f4a'},                     // 紫髮神秘客
+    {skin:'#eebd92',hair:'#a8513c',shirt:'#ee7fa6',pants:'#e0608c',long:true,skirt:'#e0608c'}           // 粉裙旅人
+  ];
+  PALS.forEach((p,i)=>makeCharTexture(this,'p'+i,p));
+  makeCharTexture(this,'npcAroha',{skin:'#b97a4b',hair:'#1f1a14',shirt:'#3f7d52',pants:'#2e4a3a',long:true,skirt:'#2e4a3a'});
+  makeCharTexture(this,'npcTom',{skin:'#f6cfa4',hair:'#8a6238',shirt:'#7a4a2f',pants:'#33302c',hat:'#5b4029'});
+  makeCharTexture(this,'npcMia',{skin:'#f8dcc0',hair:'#b3543f',shirt:'#69d3c8',pants:'#5d7a96',long:true,skirt:'#4d8a96'});
+  makeCharTexture(this,'npcJack',{skin:'#eebd92',hair:'#666666',shirt:'#5d7a96',pants:'#3a3a3a'});
+  makeCharTexture(this,'npcSam',{skin:'#f6cfa4',hair:'#23211f',shirt:'#f4c33f',pants:'#44413c',hat:'#3f7d52'});
+  makeCharTexture(this,'npcRuru',{skin:'#d9b08c',hair:'#cccccc',shirt:'#4a6b53',pants:'#5a4a3a',hat:'#3a5a44'});
+  makeCharTexture(this,'npcHana',{skin:'#f8dcc0',hair:'#7a4a2f',shirt:'#ee7fa6',pants:'#f2eee6',long:true,skirt:'#f2eee6'});
+  makeCharTexture(this,'npcKoro',{skin:'#b97a4b',hair:'#eeeeee',shirt:'#8a5a2f',pants:'#44413c'});
+  makeCharTexture(this,'npcLiam',{skin:'#f6cfa4',hair:'#3a2c1e',shirt:'#2f2f2f',pants:'#5a4a3a',hat:'#1f1f1f'});
+  makeCharTexture(this,'npcNia',{skin:'#b97a4b',hair:'#191512',shirt:'#f4f7f9',pants:'#33302c',hat:'#f4f7f9'});
+  makeCharTexture(this,'npcKiri',{skin:'#f8dcc0',hair:'#5b4029',shirt:'#d96a4a',pants:'#3b3b3b',long:true,skirt:'#b8543a'});
+  makeCharTexture(this,'npcManu',{skin:'#b97a4b',hair:'#23211f',shirt:'#3f6aa8',pants:'#33302c'});
+
+  const grid=buildGrid();
+  const map=this.make.tilemap({data:grid,tileWidth:32,tileHeight:32});
+  const ts=map.addTilesetImage('tiles','tiles',32,32,0,0);
+  layer=map.createLayer(0,ts,0,0);
+  layer.setCollision(SOLID);
+  this.physics.world.setBounds(0,0,MW*32,MHT*32);
+
+  // 玩家（出生在南口巴士站旁）
+  player=this.physics.add.sprite(34*32,41*32,'p'+mySkin,0);
+  player.shadowImg=this.add.image(player.x,player.y+22,'shadow').setDepth(1);
+  player.bikeImg=this.add.image(player.x,player.y+14,'bikeSide').setDepth(2).setVisible(false);
+  player.body.setSize(18,12).setOffset(7,34);
+  player.setCollideWorldBounds(true);
+  this.physics.add.collider(player,layer);
+  this.cameras.main.startFollow(player,true,.12,.12);
+  this.cameras.main.setBounds(0,0,MW*32,MH*32);
+  this.scale.on('resize',fitCam);fitCam();
+
+  for(let sk=0;sk<6;sk++)['d','l','r','u'].forEach((d,i)=>{
+    this.anims.create({key:'p'+sk+'-walk-'+d,frames:[i*3,i*3+1,i*3,i*3+2].map(f=>({key:'p'+sk,frame:f})),frameRate:8,repeat:-1});
+  });
+
+  // NPC
+  const mkNpc=(key,name,tx,ty)=>{
+    const s=this.add.sprite(tx*32+16,ty*32+8,key,0);s.setDepth(s.y);this.add.image(s.x,s.y+22,'shadow').setDepth(s.y-1);
+    const t=this.add.text(s.x,s.y-34,name,{fontSize:'11px',fontFamily:'sans-serif',color:'#fff',stroke:'#1d2a22',strokeThickness:3}).setOrigin(.5).setDepth(9999);
+    npcs.push(s);return s;
+  };
+  // 室內 NPC（站在各自房間裡）
+  const IC=INTERIORS;
+  mkNpc('npcAroha','Aroha · i-SITE',IC.isite.x0+6,IC.isite.y0+2.7);
+  mkNpc('npcTom','Tom · Fire & Ice 老闆',IC.cafe.x0+4,IC.cafe.y0+2.7);
+  mkNpc('npcSam','Sam · Four Square 店員',IC.dairy.x0+3,IC.dairy.y0+2.7);
+  mkNpc('npcJack','Jack · Kakapo Lodge',IC.hostel.x0+3.5,IC.hostel.y0+2.7);
+  mkNpc('npcMia','Mia · 溫泉櫃台',IC.spa.x0+3,IC.spa.y0+2.7);
+  mkNpc('npcHana','Hana · 咖啡常客',IC.cafe.x0+8.5,IC.cafe.y0+5.4);
+  mkNpc('npcLiam','Liam · Monteith\'s 酒保',IC.monteiths.x0+5,IC.monteiths.y0+2.7);
+  mkNpc('npcNia','Nia · No.31 主廚',IC.no31.x0+6,IC.no31.y0+2.7);
+  mkNpc('npcKiri','Kiri · 店員',IC.cafe2.x0+4,IC.cafe2.y0+2.7);
+  mkNpc('npcManu','Manu · 櫃台',IC.lodge2.x0+3.5,IC.lodge2.y0+2.7);
+  // 戶外 NPC
+  mkNpc('npcRuru','Ruru · 釣魚爺爺',49.5,17.5);
+  mkNpc('npcKoro','Koro · 山頂長者',28.5,2.4);
+
+  // 地點標示
+  const lbl=(tx,ty,t,sz)=>this.add.text(tx*32,ty*32,t,{fontSize:(sz||13)+'px',fontFamily:'sans-serif',color:'#ffffff',stroke:'#1d2a22',strokeThickness:4}).setOrigin(.5).setDepth(9998).setAlpha(.92);
+  lbl(31.5,1.2,'⛰ Conical Hill 觀景台');
+  lbl(19,14.2,'♨ Hanmer Springs Thermal Pools & Spa');
+  lbl(32.8,18.9,'← 🎫 買票（接待處）',9);
+  lbl(32.5,21.5,'← ♨ 園區入口',9);
+  lbl(37,7.4,'🛒 Four Square',11);
+  lbl(25,9.4,'☕ Powerhouse Café',11);
+  lbl(37,14.4,'🍺 Monteith\'s',10);
+  lbl(44,14.4,'🍛 Spice Village',10);
+  lbl(37,20.6,'☕ Fire & Ice',10);
+  lbl(44,20.6,'🍽 No.31',10);
+  lbl(37,24.6,'🛏 Kakapo Lodge',10);
+  lbl(43.5,24.6,'🍬 Fudge Co',10);
+  lbl(48.5,20.6,'🛏 Drifters Inn',9);
+  lbl(36,28.6,'🥘 Rustic',9);
+  lbl(41,28.6,'🥐 Bakery',9);
+  lbl(46,28.6,'🦌 Five Stags',9);
+  lbl(36.5,3.4,'🏨 Village Lake',9);
+  lbl(42.5,3.4,'🏨 The St James',9);
+  lbl(27,7.4,'🍴 Saints Café',9);
+  lbl(16.5,9.4,'🏡 Chalets Motel',9);
+  lbl(8.5,9.4,'⛺ Alpine Adventure HP',9);
+  lbl(27,30.6,'🏨 EDIT Hotel · Isobel\'s',9);
+  lbl(26.5,35.4,'🛏 ASURE Hanmer Inn',9);
+  lbl(37,37.4,'⛺ TOP 10 Holiday Park',9);
+  lbl(22.5,37.4,'⛺ Pines HP',9);
+  lbl(27,25.4,'ℹ️ i-SITE',10);
+  lbl(10,33.2,'⛳ Hanmer Springs Golf Club',11);
+  lbl(19,26.2,'🎾 The Domain',11);
+  lbl(55,9.6,'Dog Stream',10);
+  lbl(47.5,3.4,'🌿 Woodlands Ponds',10);
+  lbl(60,18.6,'🌲 Hanmer Forest',11);
+  lbl(48,33.2,'🌸 Brooke Dawson 公園',10);
+  lbl(40.5,43.2,'🌳 Tarndale Reserve',10);
+  lbl(34,45,'🚌 往 Christchurch (134km)',11);
+  // 街道名
+  lbl(31.5,10.5,'Conical Hill Rd',9);
+  lbl(31.5,16.5,'Amuri Ave',9);
+  lbl(31.5,36.5,'Hanmer Springs Rd',9);
+  lbl(48,11.5,'Jollies Pass Rd',9);
+  lbl(14,12.5,'Jacks Pass Rd',9);
+  lbl(48,19.5,'Cheltenham St',8);
+  lbl(48,23.5,'Harrogate St',8);
+  lbl(48,27.5,'Leamington St',8);
+  lbl(48,31.5,'Bath St',8);
+  lbl(50.5,29.5,'Scarborough Tce',8);
+  // ♨ 溫泉園區標示（鏡頭進園區才看得到）
+  const PX=2,PY=380;
+  lbl(PX+9,PY+0.8,'♨ Thermal Pools & Spa',11);
+  lbl(PX+8.5,PY+5.2,'⬇ 紅色地墊＝出口 EXIT',10);
+  lbl(PX+7,PY+6.4,'1️⃣ 硫磺池＆冷泉',9);
+  lbl(PX+20.5,PY+5.4,'2️⃣ 水療池',9);
+  lbl(PX+25.5,PY+4.2,'3️⃣ 冥想池',9);
+  lbl(PX+37.5,PY+3.2,'4️⃣ 私人池・蒸氣＆桑拿',9);
+  lbl(PX+50,PY+2.2,'5️⃣ 淡水池＆Lazy River',9);
+  lbl(PX+54.5,PY+9.4,'6️⃣7️⃣ 滑水道塔',9);
+  lbl(PX+48,PY+21.4,'8️⃣ 彩虹戲水場',9);
+  lbl(PX+38.5,PY+15.4,'9️⃣ 家庭活動池',9);
+  lbl(PX+54,PY+16.2,'🔟 Waiau Winder',9);
+  lbl(PX+23,PY+12.2,'1️⃣1️⃣ 活動池',9);
+  lbl(PX+7,PY+13.2,'1️⃣2️⃣ 瀑布石園池',9);
+  lbl(PX+29,PY+14.4,'☕ TEA KIOSK',9);
+  lbl(PX+37.5,PY+19.4,'🚿 CHANGING ROOMS',9);
+
+  // 互動點
+  zones=[
+    {x:(IC.isite.x0+6)*32+16,y:(IC.isite.y0+2.7)*32,r:64,name:'和 Aroha 說話',fn:talkAroha},
+    {x:(IC.cafe.x0+4)*32+16,y:(IC.cafe.y0+2.7)*32,r:64,name:'和 Tom 說話',fn:talkTom},
+    {x:(IC.dairy.x0+3)*32+16,y:(IC.dairy.y0+2.7)*32,r:64,name:'和 Sam 買食物',fn:openShop},
+    {x:(IC.hostel.x0+3.5)*32+16,y:(IC.hostel.y0+2.7)*32,r:64,name:'和 Jack 說話（睡覺）',fn:talkJack},
+    {x:(IC.spa.x0+3)*32+16,y:(IC.spa.y0+2.7)*32,r:64,name:'和 Mia 說話（溫泉門票）',fn:talkMia},
+    {x:(IC.cafe.x0+8.5)*32+16,y:(IC.cafe.y0+5.4)*32,r:46,name:'和 Hana 聊天',fn:talkHana},
+    {x:(IC.monteiths.x0+5)*32+16,y:(IC.monteiths.y0+2.7)*32,r:64,name:'和酒保 Liam 聊天',fn:()=>showDialog('Liam（Monteith\'s）',['歡迎來到 Monteith\'s Brewery Bar！','我們的啤酒是西岸 Greymouth 釀的，經典！','壁爐旁的位子最舒服，冬天滑完雪來一杯最讚。'])},
+    {x:(IC.no31.x0+6)*32+16,y:(IC.no31.y0+2.7)*32,r:64,name:'和主廚 Nia 聊天',fn:()=>showDialog('Nia（No.31）',['No.31 走現代歐陸風，食材都是本地的。','鹿肉、野兔、鵪鶉……都是坎特伯雷的味道。','存夠錢歡迎來吃一頓慶祝你的新生活！'])},
+    {x:(IC.cafe2.x0+4)*32+16,y:(IC.cafe2.y0+2.7)*32,r:64,name:'和店員 Kiri 聊天',fn:()=>showDialog('Kiri（店員）',['Kia ora！歡迎光臨～','今天的餐點都是現做的，找個位子坐吧。','（各店專屬菜單將在下一個版本開放！）'])},
+    {x:(IC.lodge2.x0+3.5)*32+16,y:(IC.lodge2.y0+2.7)*32,r:64,name:'和櫃台 Manu 聊天',fn:()=>showDialog('Manu（櫃台）',['Kia ora！想看房嗎？','旺季很滿，建議先到 i-SITE 詢問空房。','（入住功能將在下一個版本開放！）'])},
+    {x:49.5*32+16,y:17.5*32,r:46,name:'和 Ruru 爺爺說話',fn:talkRuru},
+    {x:28.5*32+16,y:2.4*32,r:44,name:'和 Koro 長者說話',fn:talkKoro},
+    {x:50.5*32,y:16*32,r:42,name:'釣魚 🎣',fn:startFishing},
+    {x:53.5*32,y:30*32,r:46,name:'釣魚 🎣',fn:startFishing},
+    {x:53*32,y:12.5*32,r:40,name:'在橋上釣魚 🎣',fn:startFishing},
+    {x:31.5*32,y:2*32,r:60,name:'眺望小鎮風景',fn:lookout},
+    {x:59*32,y:24*32,r:55,name:'森林野餐區休息',fn:picnic},
+    {x:(2+29)*32,y:(380+18.4)*32,r:52,name:'Tea Kiosk 買熱可可（$6）',fn:teaKiosk},
+    {x:(2+50)*32,y:(380+13)*32,r:55,name:'玩滑水道 Conical Thrill！',fn:rideSlide},
+    {x:(2+54)*32,y:(380+18.5)*32,r:50,name:'Waiau Winder 漩渦池',fn:rideVortex},
+    {x:(2+37.5)*32,y:(380+7.4)*32,r:55,name:'蒸氣室＆桑拿',fn:doSauna},
+    {x:(2+25.5)*32,y:(380+6.5)*32,r:46,name:'冥想池畔靜心',fn:doMeditate},
+    {x:(2+37.5)*32,y:(380+23.4)*32,r:52,name:'更衣室整理一下',fn:()=>showDialog('更衣室',['沖個澡、換上泳衣。','置物櫃要記得鎖喔！','♿ 園區全區無障礙友善。'])},
+    {x:34*32,y:43*32,r:50,name:'查看巴士站牌',fn:()=>showDialog('巴士站牌',['Hanmer Springs Rd 往 Christchurch 134 km。','（跨區域旅行將在下一個版本開放！）'])}
+  ];
+
+  // 🧑‍🍳 門口老闆
+  SHOPKEEPERS.forEach((kp,i)=>{
+    makeCharTexture(this,'boss'+i,kp.pal);
+    mkNpc('boss'+i,kp.name+' · 老闆',kp.tx,kp.ty);
+    zones.push({x:kp.tx*32+16,y:kp.ty*32,r:50,name:'和老闆 '+kp.name+' 說話',fn:()=>bossMenu(kp)});
+    // ❗ 缺員工標記（應徵成功就消失）
+    kp._mark=this.add.text(kp.tx*32+16,(kp.ty-1.6)*32,'❗',{fontSize:'20px'}).setOrigin(.5).setDepth(9999);
+    this.tweens.add({targets:kp._mark,y:kp._mark.y-8,duration:620,yoyo:true,repeat:-1,ease:'Sine.inOut'});
+    if(S.jobs&&S.jobs[kp.key])kp._mark.setVisible(false);
+  });
+
+  decor(this);
+  spawnWalkers(this);
+
+  // 夜晚遮罩
+  nightRect=this.add.rectangle(0,0,10,10,0x0a1530).setOrigin(0).setScrollFactor(0).setDepth(20000).setAlpha(0);
+
+  // 鍵盤
+  this.keys=this.input.keyboard.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE');
+  this.input.keyboard.on('keydown-E',doInteract);
+  this.input.keyboard.on('keydown-SPACE',doInteract);
+
+  // 時鐘：1 秒 = 遊戲 1 分鐘
+  this.time.addEvent({delay:1000,loop:true,callback:tick});
+  ui();
+}
+
+// ---------- 🚶 路人 NPC（鎮上與園區隨機走動）----------
+let walkers=[];
+function spawnWalkers(scene){
+  const areas=[
+    {x:30,y:14,w:3,h:28},                       // Amuri Ave
+    {x:30,y:7,w:3,h:7},                         // Conical Hill Rd
+    {x:33,y:12,w:24,h:1},                       // Jollies Pass Rd
+    {x:8,y:13,w:22,h:1},                        // Jacks Pass Rd
+    {x:33,y:20,w:17,h:1},{x:33,y:24,w:17,h:1},  // Cheltenham / Harrogate
+    {x:33,y:28,w:17,h:1},{x:33,y:32,w:17,h:1},  // Leamington / Bath
+    {x:12,y:27,w:11,h:7},                       // The Domain
+    {x:44,y:34,w:8,h:8},                        // Brooke Dawson 公園
+    {x:4,y:382,w:54,h:24},{x:4,y:382,w:54,h:24},{x:4,y:382,w:54,h:24} // ♨ 園區遊客
+  ];
+  const picks=[];
+  for(let i=0;i<9;i++)picks.push(areas[(Math.random()*10)|0]); // 鎮上 9 位
+  picks.push(areas[10],areas[11],areas[12]);                    // 園區 3 位
+  picks.forEach(a=>{
+    for(let t=0;t<50;t++){
+      const tx=a.x+((Math.random()*a.w)|0),ty=a.y+((Math.random()*a.h)|0);
+      const tl=layer.getTileAt(tx,ty);
+      if(!tl||SOLIDSET.has(tl.index))continue;
+      const sk=(Math.random()*6)|0;
+      const spr=scene.add.sprite(tx*32+16,ty*32+16,'p'+sk,0);spr.setDepth(spr.y);
+      const sh=scene.add.image(spr.x,spr.y+22,'shadow').setDepth(spr.y-1);
+      walkers.push({spr,sh,sk,area:a,busy:false,wait:500+Math.random()*3000});
+      break;
+    }
+  });
+}
+function walkersTick(dt){
+  for(const w of walkers){
+    if(w.busy)continue;
+    w.wait-=dt;if(w.wait>0)continue;
+    const tx=Math.round((w.spr.x-16)/32),ty=Math.round((w.spr.y-16)/32);
+    const dirs=[[1,0,'r'],[-1,0,'l'],[0,1,'d'],[0,-1,'u']].sort(()=>Math.random()-.5);
+    let moved=false;
+    for(const d of dirs){
+      const nx=tx+d[0],ny=ty+d[1];
+      if(nx<w.area.x||ny<w.area.y||nx>=w.area.x+w.area.w||ny>=w.area.y+w.area.h)continue;
+      const tl=layer.getTileAt(nx,ny);
+      if(!tl||SOLIDSET.has(tl.index))continue;
+      moved=true;w.busy=true;
+      w.spr.anims.play('p'+w.sk+'-walk-'+d[2],true);
+      scn.tweens.add({targets:w.spr,x:nx*32+16,y:ny*32+16,duration:560,
+        onUpdate:()=>{w.sh.setPosition(w.spr.x,w.spr.y+22);w.spr.setDepth(w.spr.y);w.sh.setDepth(w.spr.y-1);},
+        onComplete:()=>{w.busy=false;w.wait=500+Math.random()*2800;
+          w.spr.anims.stop();w.spr.setFrame(({d:0,l:3,r:6,u:9})[d[2]]);}});
+      break;
+    }
+    if(!moved)w.wait=900+Math.random()*1600;
+  }
+}
+
+function nearZone(){
+  let best=null,bd=1e9;
+  for(const z of zones){
+    const d=Phaser.Math.Distance.Between(player.x,player.y,z.x,z.y);
+    if(d<z.r&&d<bd){bd=d;best=z;}
+  }
+  return best;
+}
+function doInteract(){
+  if(overlayOpen||chatOpen)return;
+  if(fishing){if(fishing.state==='bite')catchFish();return;}
+  if(dialogOpen){advDialog();return;}
+  const z=nearZone();
+  if(z)z.fn();
+}
+
+let lastDir='d',lastStep=0,soakFx=null,soakEmoT=0,btlWatch=0;
+function update(time,delta){
+  if(!player)return;
+  const dt=delta||16.7;
+  const k=scn.keys;
+  let vx=0,vy=0;
+  if(!dialogOpen&&!overlayOpen&&!chatOpen&&!transit){
+    if(k.A.isDown||k.LEFT.isDown)vx=-1;
+    else if(k.D.isDown||k.RIGHT.isDown)vx=1;
+    if(k.W.isDown||k.UP.isDown)vy=-1;
+    else if(k.S.isDown||k.DOWN.isDown)vy=1;
+    if(Math.abs(joy.x)>.25||Math.abs(joy.y)>.25){vx=joy.x;vy=joy.y;}
+  }
+  // 🧭 自動導航：沒有手動輸入時沿路徑走；手動輸入即取消
+  if(autoPath&&!transit&&!dialogOpen&&!overlayOpen&&!chatOpen){
+    if(vx!==0||vy!==0){autoPath=null;toast('🧭 已取消導航');}
+    else{
+      const t0=autoPath[0];
+      const dx=t0[0]-player.x,dy=t0[1]-player.y,dd=Math.hypot(dx,dy);
+      if(dd<10){autoPath.shift();if(!autoPath.length){autoPath=null;}}
+      else{vx=dx/dd;vy=dy/dd;}
+    }
+  }
+  let speed=160;
+  if(S.energy<12||S.hunger<12)speed=95;
+  if(S.bikeOn&&S.inv.bike)speed*=1.8;   // 🚲 騎腳踏車加速
+  const v=new Phaser.Math.Vector2(vx,vy);
+  if(v.length()>0)v.normalize().scale(speed);
+  player.setVelocity(v.x,v.y);
+  if(fishing&&v.length()>1)endFishing('🎣 收竿了');
+  if(v.length()>1){
+    lastDir=Math.abs(v.x)>Math.abs(v.y)?(v.x>0?'r':'l'):(v.y>0?'d':'u');
+    player.anims.play(player.texture.key+'-walk-'+lastDir,true);
+    const _n=performance.now();if(_n-lastStep>270){lastStep=_n;SND.step();}
+  }else{
+    player.anims.stop();
+    player.setFrame(({d:0,l:3,r:6,u:9})[lastDir]);
+  }
+  player.setDepth(player.y);
+  if(player.shadowImg){player.shadowImg.setPosition(player.x,player.y+22);player.shadowImg.setDepth(player.y-1);}
+  // 🚲 騎乘畫面：腳踏車跟著玩家、依方向翻轉
+  if(player.bikeImg){
+    const on=S.bikeOn&&S.inv.bike;
+    player.bikeImg.setVisible(on);
+    if(on){
+      const sideways=(lastDir==='l'||lastDir==='r');
+      player.bikeImg.setTexture(sideways?'bikeSide':'bikeFront');
+      player.bikeImg.setFlipX(lastDir==='l');
+      player.bikeImg.setPosition(player.x,player.y+14);
+      player.bikeImg.setDepth(player.y-0.5);
+    }
+  }
+
+  const tx=Math.floor(player.x/32),ty=Math.floor(player.y/32);
+  // 進出室內：走進門（15）→ 進房間；踩出口地墊（25）→ 回戶外
+  if(!transit){
+    if(!curInterior){
+      const b=DOORS[tx+','+ty];
+      if(b)enterInterior(b);
+    }else{
+      const dt=layer.getTileAt(tx,ty);
+      if(dt&&dt.index===25)exitInterior();
+    }
+  }
+  // 🧢 野生精靈遭遇（草地/草原/花圃）
+  if(!transit&&!dialogOpen&&!overlayOpen&&!chatOpen&&!btl)encounterCheck(tx,ty);
+  // 泡溫泉
+  const tile=layer.getTileAtWorldXY(player.x,player.y+10);
+  const soaking=!!(tile&&(tile.index===7||tile.index===17));
+  if(soaking){
+    S.soakT+=1/60;S.stats.soak+=1/3600;
+    S.party.forEach(m=>{m.hp=Math.min(m.maxHp,m.hp+0.04);});
+    S.mood=Math.min(100,S.mood+0.05);S.energy=Math.min(100,S.energy+0.025);
+    if(S.soakT>3&&S.quest===4){setQuest(5);toast('♨ 太舒服了！心情大幅恢復');}
+  }else S.soakT=0;
+  // ♨ 泡湯享受狀態：下半身入水＋水波紋＋表情飄出
+  if(soaking&&!soakFx){
+    player.setCrop(0,0,32,34);                                  // 腿泡進水裡
+    soakFx=scn.add.image(player.x,player.y+14,'ripple').setAlpha(.9);
+    if(player.shadowImg)player.shadowImg.setVisible(false);
+  }
+  if(soakFx){
+    soakFx.setPosition(player.x,player.y+14);soakFx.setDepth(player.y+1);
+    soakFx.setScale(1+Math.sin(performance.now()/350)*.08);     // 水波呼吸
+    soakEmoT-=dt;
+    if(soakEmoT<=0){
+      soakEmoT=1300+Math.random()*900;
+      const e=['♨','😌','💕','✨','🫧'][(Math.random()*5)|0];
+      const t=scn.add.text(player.x+(Math.random()*22-11),player.y-30,e,{fontSize:'15px'}).setOrigin(.5).setDepth(20001);
+      scn.tweens.add({targets:t,y:t.y-30,alpha:0,duration:1700,onComplete:()=>t.destroy()});
+    }
+  }
+  if(!soaking&&soakFx){
+    player.clearCrop();soakFx.destroy();soakFx=null;
+    if(player.shadowImg)player.shadowImg.setVisible(true);
+  }
+
+  // 互動提示
+  const z=(!dialogOpen&&!overlayOpen)?nearZone():null;
+  if(z){$('hint').textContent='[E] '+z.name;$('hint').classList.remove('hidden');}
+  else $('hint').classList.add('hidden');
+
+  walkersTick(dt);
+  // 戰鬥看門狗：訊息流程若意外中斷，自動回到行動選單
+  if(btl&&!btl.over){
+    if($('btlBtns').children.length>0)btlWatch=0;
+    else{btlWatch+=dt;if(btlWatch>4500){btlWatch=0;try{bBars();playerTurn();}catch(err){endBattle();}}}
+  }else btlWatch=0;
+  // 夜色
+  nightRect.setSize(scn.scale.width,scn.scale.height);
+  const h=S.mins/60;
+  let a=0;
+  if(h<5)a=.45;else if(h<7)a=.45*(7-h)/2;else if(h>=18&&h<21)a=.45*(h-18)/3;else if(h>=21)a=.45;
+  if(S.torchOn&&S.inv.torch)a*=0.4;   // 🔦 手電筒：夜間變亮
+  nightRect.setAlpha(a);
+  for(const gl of glows)gl.setAlpha(Math.min(1,a*1.8));
+  mpUpdate(v);
+}
+
+function tick(){
+  S.mins++;
+  if(S.mins>=1440){S.mins=0;S.day++;}
+  const moving=player&&player.body&&player.body.speed>5;
+  S.hunger=Math.max(0,S.hunger-0.07);
+  S.energy=Math.max(0,S.energy-(moving?0.06:0.025));
+  S.mood=Math.max(0,S.mood-0.02);
+  if(S.hunger<=5){S.health=Math.max(0,S.health-0.08);}
+  else if(S.health<100&&S.hunger>50)S.health=Math.min(100,S.health+0.03);
+  if(S.hunger<15&&Math.floor(S.mins)%120===0)toast('🍔 肚子好餓，效率下降中…');
+  ui();
+}
+
+// ---------- NPC 對話 ----------
+function talkAroha(){
+  if(S.quest===0){
+    showDialog('Aroha（i-SITE）',[
+      'Kia ora！歡迎來到 Hanmer Springs！',
+      '你是剛搭巴士來的吧？這裡是南島最舒服的溫泉小鎮。',
+      '想在這裡生活，先去找工作吧。Amuri Ave 東側的 Fire & Ice 咖啡餐廳正在缺人，去找老闆 Tom！',
+      '對了，鎮上的溫泉很有名，賺到錢一定要去泡一次。'
+    ],()=>setQuest(1));
+  }else{
+    showDialog('Aroha（i-SITE）',[
+      'Kia ora！需要什麼資訊嗎？',
+      '北邊的 Conical Hill 步道走上去可以看到整個小鎮，東邊的 Hanmer Forest 也很值得走走。'
+    ]);
+  }
+}
+function talkTom(){
+  if(S.quest===0){showDialog('Tom（咖啡店老闆）',['想找工作？先去 i-SITE 找 Aroha 報到吧，她會跟你介紹。']);return;}
+  if(S.quest===1){
+    showDialog('Tom（咖啡店老闆）',[
+      '哦？Aroha 介紹來的？我們正缺人手！',
+      '工作很簡單：記住客人點什麼，正確做出來就行。',
+      '做對一單 $8，做錯只有 $2 小費。隨時跟我說一聲就能開工！'
+    ],()=>setQuest(2));
+    return;
+  }
+  if(S.energy<20){showDialog('Tom（咖啡店老闆）',['你看起來累壞了，先去休息吧，睡飽再來上班。']);return;}
+  if(S.hunger<15){showDialog('Tom（咖啡店老闆)',['餓著肚子可沒法工作！先去吃點東西。']);return;}
+  openOv('<h2>☕ Fire & Ice 打工</h2><p>一輪 5 位客人。記住客人點的品項，從選項中選出正確的！<br>✅ 做對 +$8　❌ 做錯 +$2<br>消耗：⚡20 體力、🍔10 飢餓</p><button class="btn" onclick="startShift()">開始上班</button><button class="btn gray" onclick="closeOv()">改天再說</button>');
+}
+function talkMia(){
+  if(S.poolPass){showDialog('Mia（溫泉櫃台）',['歡迎回來！直接進去泡吧 ♨','泡溫泉會慢慢恢復心情和體力哦。']);return;}
+  openOv('<h2>♨ 溫泉水療中心</h2><p>Hanmer Springs 最有名的就是溫泉！<br>門票 $15（本原型中永久有效）。<br>站進溫泉池就會開始泡湯，恢復心情與體力。</p>'+
+    (S.money>=15?'<button class="btn" onclick="buyPass()">購買門票 $15</button>':'<p style="color:#f0a04b">💰 錢不夠（需要 $15），先去打工吧！</p>')+
+    '<button class="btn gray" onclick="closeOv()">下次再來</button>');
+}
+function buyPass(){S.money-=15;S.poolPass=true;SND.blip();closeOv();toast('🎫 取得溫泉門票！走進池子就能泡湯');ui();}
+function talkJack(){
+  openOv('<h2>🛏 Kakapo 背包客棧</h2><p>Jack：「床位已經幫你留好了，睡一覺明天 7 點起床。」<br><br>恢復：⚡體力全滿、😊心情 +10<br>代價：🍔 飢餓 -25（睡醒會餓）</p><button class="btn" onclick="doSleep()">睡覺 💤</button><button class="btn gray" onclick="closeOv()">還不睏</button>');
+}
+function doSleep(){
+  closeOv();overlayOpen=true;SND.sleep();
+  scn.cameras.main.fadeOut(600,0,0,0);
+  setTimeout(()=>{
+    S.day++;S.mins=7*60;S.energy=100;S.mood=Math.min(100,S.mood+10);
+    S.hunger=Math.max(5,S.hunger-25);
+    healParty(true);saveParty();
+    if(S.quest===5)setQuest(6);
+    ui();scn.cameras.main.fadeIn(600,0,0,0);
+    overlayOpen=false;
+    toast('🌅 Day '+S.day+' 早安，Hanmer Springs！');
+  },800);
+}
+function lookout(){
+  if(S.lookoutDay===S.day){showDialog('Conical Hill 觀景台',['今天已經來看過了，風景還是一樣美。']);return;}
+  S.lookoutDay=S.day;S.mood=Math.min(100,S.mood+15);ui();
+  showDialog('Conical Hill 觀景台',['你爬上觀景台，整個 Hanmer Springs 在腳下展開——','溫泉的蒸氣、主街的咖啡香、遠處的雪山……','😊 心情 +15！（每天一次）']);
+}
+function picnic(){
+  if(S.picnicDay===S.day){showDialog('森林野餐區',['樹影婆娑，你已經在這裡休息過了。']);return;}
+  S.picnicDay=S.day;S.mood=Math.min(100,S.mood+8);S.energy=Math.min(100,S.energy+8);ui();
+  showDialog('Hanmer Forest 野餐區',['你在高大的松樹下坐了一會兒，聽著 Dog Stream 的水聲。','😊 心情 +8、⚡ 體力 +8（每天一次）']);
+}
+
+// ---------- Four Square 商店 ----------
+const FOODS=[
+  ['🥧 Meat Pie',6,'飢餓 +30、體力 +5',()=>{S.hunger=Math.min(100,S.hunger+30);S.energy=Math.min(100,S.energy+5);}],
+  ['🍟 Fish & Chips',10,'飢餓 +50、心情 +5',()=>{S.hunger=Math.min(100,S.hunger+50);S.mood=Math.min(100,S.mood+5);}],
+  ['☕ Flat White',5,'體力 +15、心情 +8',()=>{S.energy=Math.min(100,S.energy+15);S.mood=Math.min(100,S.mood+8);}],
+  ['🥗 沙拉',7,'飢餓 +20、健康 +10',()=>{S.hunger=Math.min(100,S.hunger+20);S.health=Math.min(100,S.health+10);}],
+  ['🥤 L&P 汽水',3,'心情 +6',()=>{S.mood=Math.min(100,S.mood+6);}]
+];
+function openShop(){
+  let h='<h2>🛒 Four Square 超市</h2><p>Sam：「Kia ora！需要什麼儘管說。」</p>';
+  FOODS.forEach((f,i)=>{
+    h+='<div class="shopItem"><div>'+f[0]+'<small>'+f[2]+'</small></div>'+
+      (S.money>=f[1]?'<button class="btn" onclick="buyFood('+i+')">$'+f[1]+'</button>':'<span style="color:#888">$'+f[1]+'</span>')+'</div>';
+  });
+  h+='<div class="shopItem"><div>🥝 奇異球<small>收服野生精靈用（現有 '+S.balls+' 顆）</small></div>'+
+    (S.money>=8?'<button class="btn" onclick="buyBall()">$8</button>':'<span style="color:#888">$8</span>')+'</div>';
+  if(!S.inv.rod&&S.quest>=6)
+    h+='<div class="shopItem"><div>🎣 釣竿<small>到 Dog Stream 河邊釣魚必備</small></div>'+
+      (S.money>=12?'<button class="btn" onclick="buyRod()">$12</button>':'<span style="color:#888">$12</span>')+'</div>';
+  if(S.quest===8&&!S.inv.fw)
+    h+='<div class="shopItem"><div>☕ 外帶 Flat White<small>幫 Hana 買的</small></div>'+
+      (S.money>=5?'<button class="btn" onclick="buyFW()">$5</button>':'<span style="color:#888">$5</span>')+'</div>';
+  const names=Object.keys(S.inv.fish);
+  if(names.length){
+    h+='<p style="margin-top:8px">🐟 Sam 也收購漁獲：</p>';
+    names.forEach(k=>{const f=FISH.find(x=>x[0]===k);if(!f)return;
+      h+='<div class="shopItem"><div>'+f[3]+' '+k+' ×'+S.inv.fish[k]+'<small>每條收購 $'+f[1]+'</small></div><button class="btn" onclick="sellFish(\''+k+'\')">賣 1 條</button></div>';});
+  }
+  h+='<button class="btn gray" onclick="closeOv()">離開</button>';
+  openOv(h);
+}
+function buyBall(){S.money-=8;S.balls++;saveParty();SND.coin();ui();toast('🥝 奇異球 +1（現有 '+S.balls+' 顆）');openShop();}
+function buyRod(){S.money-=12;S.inv.rod=true;SND.coin();ui();toast('🎣 買到釣竿了！去 Dog Stream 河邊試試');openShop();}
+function buyFW(){S.money-=5;S.inv.fw=true;SND.blip();ui();toast('☕ 外帶 Flat White 到手，拿去給 Hana');openShop();}
+function sellFish(k){const f=FISH.find(x=>x[0]===k);if(!f||!S.inv.fish[k])return;S.inv.fish[k]--;if(!S.inv.fish[k])delete S.inv.fish[k];S.money+=f[1];SND.coin();ui();openShop();}
+function buyFood(i){
+  const f=FOODS[i];
+  if(S.money<f[1])return;
+  S.money-=f[1];f[3]();SND.eat();ui();
+  toast('😋 吃了 '+f[0]+'！');
+  if(S.quest===3&&S.hunger>=50)setQuest(4);
+  openShop();
+}
+
+// ---------- 咖啡店打工小遊戲 ----------
+const MENU=[['Flat White','☕'],['Long Black','☕'],['Meat Pie','🥧'],['起司捲','🥐'],['L&P 汽水','🥤'],['Pavlova 蛋糕','🍰']];
+let shift={round:0,earn:0,target:null};
+function startShift(){
+  shift={round:0,earn:0,target:null};
+  S.energy=Math.max(0,S.energy-20);S.hunger=Math.max(0,S.hunger-10);ui();
+  nextCustomer();
+}
+function nextCustomer(){
+  shift.round++;
+  if(shift.round>5){endShift();return;}
+  shift.target=MENU[(Math.random()*MENU.length)|0];
+  openOv('<h2>☕ 客人 '+shift.round+'/5</h2><p style="font-size:16px">顧客：「你好，我要一份——<br><b style="font-size:22px">'+shift.target[1]+' '+shift.target[0]+'</b>」<br><br>記住了嗎？</p><button class="btn" onclick="showChoices()">開始製作！</button>');
+}
+function showChoices(){
+  const opts=[shift.target];
+  while(opts.length<4){const m=MENU[(Math.random()*MENU.length)|0];if(!opts.includes(m))opts.push(m);}
+  Phaser.Utils.Array.Shuffle(opts);
+  let h='<h2>☕ 客人 '+shift.round+'/5</h2><p>剛才客人點了什麼？</p>';
+  opts.forEach(o=>{h+='<button class="btn" style="display:block;width:100%;margin:6px 0" onclick="serve(\''+o[0]+'\')">'+o[1]+' '+o[0]+'</button>';});
+  openOv(h);
+}
+function serve(name){
+  if(name===shift.target[0]){shift.earn+=8;SND.ok();openOv('<h2>✅ 完美！</h2><p>顧客：「太棒了，就是這個！」 +$8</p><button class="btn" onclick="nextCustomer()">下一位客人</button>');}
+  else{shift.earn+=2;SND.bad();openOv('<h2>❌ 弄錯了…</h2><p>顧客：「呃……我點的不是這個。」 只拿到 $2 小費</p><button class="btn" onclick="nextCustomer()">下一位客人</button>');}
+}
+function endShift(){
+  S.money+=shift.earn;S.shiftsDone++;SND.coin();ui();
+  let bonus='';
+  if(S.quest===2){setQuest(3);bonus='<p style="color:#9be37c">🎉 Tom：「做得不錯，以後隨時來上班！」</p>';}
+  openOv('<h2>💰 下班！</h2><p>本輪賺了 <b style="color:#9be37c">$'+shift.earn+'</b>'+(shift.earn>=40?'（全對，太強了！）':'')+'</p>'+bonus+'<button class="btn" onclick="closeOv()">收工</button>');
+}
+
+// ---------- 手機搖桿 ----------
+(function(){
+  const joyEl=$('joy'),stick=$('stick');
+  let active=false,cx=0,cy=0;
+  function setStick(dx,dy){stick.style.left=(35+dx*30)+'px';stick.style.top=(35+dy*30)+'px';}
+  joyEl.addEventListener('touchstart',e=>{e.preventDefault();active=true;const r=joyEl.getBoundingClientRect();cx=r.left+55;cy=r.top+55;},{passive:false});
+  joyEl.addEventListener('touchmove',e=>{
+    if(!active)return;e.preventDefault();
+    const t=e.touches[0];
+    let dx=(t.clientX-cx)/45,dy=(t.clientY-cy)/45;
+    const len=Math.hypot(dx,dy);if(len>1){dx/=len;dy/=len;}
+    joy.x=dx;joy.y=dy;setStick(dx,dy);
+  },{passive:false});
+  const end=e=>{active=false;joy.x=0;joy.y=0;setStick(0,0);};
+  joyEl.addEventListener('touchend',end);joyEl.addEventListener('touchcancel',end);
+  $('btnAct').addEventListener('touchstart',e=>{e.preventDefault();doInteract();},{passive:false});
+  $('btnAct').addEventListener('mousedown',e=>{e.preventDefault();doInteract();});
+})();
+
+
+
+// ---------- 釣魚系統 ----------
+const FISH=[['鱒魚',6,45,'🐟'],['鰻魚',8,25,'🐍'],['鮭魚',12,18,'🐟'],['彩虹鱒',15,8,'🌈'],['舊靴子',1,4,'🥾']];
+let fishing=null,biteMark=null;
+function startFishing(){
+  if(!S.inv.rod){showDialog('河邊告示牌',['「Dog Stream 熱門釣點 — 請自備釣具」','Four Square 超市有賣釣竿（$12）。']);return;}
+  if(fishing)return;
+  if(S.energy<8){toast('⚡ 太累了，先休息一下吧');return;}
+  S.energy=Math.max(0,S.energy-5);ui();
+  fishing={state:'wait'};
+  toast('🎣 拋竿……出現 ❗ 時快按 E（或互動鍵）！');
+  fishing.t1=setTimeout(()=>{
+    fishing.state='bite';SND.pop();
+    biteMark=scn.add.text(player.x,player.y-62,'❗',{fontSize:'30px',fontFamily:'sans-serif',color:'#ff5252',stroke:'#ffffff',strokeThickness:4}).setOrigin(.5).setDepth(10002);
+    fishing.t2=setTimeout(()=>endFishing('💨 魚跑掉了……再試一次'),850);
+  },1500+Math.random()*2500);
+}
+function endFishing(msg){
+  if(!fishing)return;
+  clearTimeout(fishing.t1);clearTimeout(fishing.t2);
+  if(biteMark){biteMark.destroy();biteMark=null;}
+  fishing=null;
+  if(msg)toast(msg);
+}
+function catchFish(){
+  clearTimeout(fishing.t2);
+  let roll=Math.random()*100,f=FISH[0];
+  for(const x of FISH){if(roll<x[2]){f=x;break;}roll-=x[2];}
+  S.inv.fish[f[0]]=(S.inv.fish[f[0]]||0)+1;
+  S.fishCaught++;S.mood=Math.min(100,S.mood+4);
+  SND.splash();SND.ok();ui();
+  endFishing('🎉 釣到 '+f[3]+' '+f[0]+'！（Four Square 收購價 $'+f[1]+'）');
+  if(S.quest===6)setQuest(7);
+}
+function talkRuru(){
+  const fc=Object.values(S.inv.fish).reduce((a,b)=>a+b,0);
+  if(S.quest<7){showDialog('Ruru（釣魚爺爺）',['年輕人，這條 Dog Stream 我釣了六十年咯。','想學釣魚？先去 Four Square 買支釣竿吧。']);return;}
+  if(S.quest===7){
+    if(fc>=3){
+      let left=3;
+      for(const k of Object.keys(S.inv.fish)){while(left>0&&S.inv.fish[k]>0){S.inv.fish[k]--;left--;}if(S.inv.fish[k]===0)delete S.inv.fish[k];}
+      S.money+=25;SND.coin();ui();
+      showDialog('Ruru（釣魚爺爺）',['哈！手感不錯嘛，這 3 條魚夠我燉一鍋湯了。','這 $25 拿去，算是給你的鼓勵！','對了，咖啡店門口的 Hana 好像有事想拜託人……'],()=>setQuest(8));
+    }else showDialog('Ruru（釣魚爺爺）',['幫我釣 3 條魚來，讓我看看你的本事。','（你身上現在有 '+fc+' 條魚）']);
+    return;
+  }
+  showDialog('Ruru（釣魚爺爺）',['釣魚最重要的是耐心，年輕人。','彩虹鱒很稀有，釣到可別急著賣！']);
+}
+function talkHana(){
+  if(S.quest<8){showDialog('Hana（咖啡常客）',['這家店的 Flat White 是全南島最好喝的！','我每天都要來一杯才能開始工作。']);return;}
+  if(S.quest===8){
+    if(S.inv.fw){
+      S.inv.fw=false;S.money+=12;S.mood=Math.min(100,S.mood+10);SND.coin();ui();
+      showDialog('Hana（咖啡常客）',['天哪，你真的幫我買來了！','店裡排隊太長，你救了我一命……這 $12 拿去，多的算小費！','以後常來找我聊天呀。'],()=>setQuest(9));
+    }else showDialog('Hana（咖啡常客）',['唉，好想喝 Flat White，但隊伍排好長……','可以幫我去 Four Square 買一杯外帶嗎？（$5）']);
+    return;
+  }
+  showDialog('Hana（咖啡常客）',['今天的咖啡也很完美 ☕','聽說夏天湖區會開放露營，好期待！']);
+}
+function talkKoro(){
+  showDialog('Koro（山頂長者）',['Kia ora e hoa，歡迎登上 Conical Hill。','百年前人們在這裡發現了溫泉，小鎮才慢慢長出來。','記得善待這片土地，它會回報你的。']);
+}
+
+// ---------- 多人連線（Colyseus）----------
+let room=null,mpOn=false,chatOpen=false,myName='',mySkin=(Math.random()*6)|0;
+let remotes={},selfLabel=null,selfBubble=null,lastSend=0;
+let mpPlayers={},whisperTarget=null;
+let friends=[];try{const fv=localStorage.getItem('kiwiLifeFriends');if(fv)friends=JSON.parse(fv)||[];}catch(e){}
+function mpStatus(t){const el=$('mpStatus');if(el)el.textContent=t;}
+function wsUrl(){
+  if(location.protocol==='http:'||location.protocol==='https:')
+    return (location.protocol==='https:'?'wss':'ws')+'://'+location.host;
+  return 'ws://localhost:2567';
+}
+async function connectMP(){
+  if(typeof Colyseus==='undefined'){mpStatus('⚠ 載入不到連線元件，單人模式');return;}
+  mpStatus('連線中…');
+  try{
+    const client=new Colyseus.Client(wsUrl());
+    room=await client.joinOrCreate('town',{name:myName,skin:mySkin});
+    mpOn=true;mpStatus('✓ 已連上伺服器');
+    toast('🌐 已連線！其他玩家會出現在小鎮裡（Enter 聊天）');
+    $('chatLog').classList.remove('hidden');
+    logSys('已連線，可以開始聊天了');
+    room.onMessage('st',snap=>{
+      mpPlayers=snap||{};
+      let n=0;
+      for(const id in snap){n++;
+        if(id===room.sessionId)continue;
+        if(!remotes[id])addRemote(id,snap[id]);
+        const r=remotes[id],p=snap[id];
+        r.tx=p.x;r.ty=p.y;r.dir=p.dir||'d';r.m=!!p.m;
+      }
+      for(const id in remotes)if(!snap[id])removeRemote(id);
+      const el=$('online');if(el)el.textContent='👥 '+Math.max(1,n);
+    });
+    room.onMessage('chat',d=>{showBubble(d.id,d.t);logChat(d.name,d.t,d.id===room.sessionId);});
+    room.onMessage('whisper',d=>{logWhisper(d);if(!d.self)SND.pop();});
+    room.onLeave(()=>{
+      mpOn=false;mpPlayers={};toast('🌐 與伺服器斷線，改為單人模式');
+      for(const id in remotes)removeRemote(id);
+      const el=$('online');if(el)el.textContent='👥 1';
+      logSys('已斷線');
+    });
+  }catch(e){
+    mpOn=false;
+    toast('🌐 找不到伺服器，先以單人模式遊玩');
+    mpStatus('單人模式（伺服器未啟動）');
+  }
+}
+function addRemote(id,p){
+  if(!scn)return;
+  const spr=scn.add.sprite(p.x||1088,p.y||1376,'p'+((p.skin|0)%6),0);
+  const label=scn.add.text(spr.x,spr.y-34,p.name||'旅人',{fontSize:'11px',fontFamily:'sans-serif',color:'#aef3ff',stroke:'#1d2a22',strokeThickness:3}).setOrigin(.5).setDepth(9999);
+  const sh=scn.add.image(spr.x,spr.y+22,'shadow').setDepth(1);
+  remotes[id]={spr,label,sh,tx:spr.x,ty:spr.y,dir:'d',m:false,bubble:null};
+}
+function removeRemote(id){
+  const r=remotes[id];if(!r)return;
+  if(r.bubble)r.bubble.destroy();
+  r.spr.destroy();r.label.destroy();if(r.sh)r.sh.destroy();delete remotes[id];
+}
+function addSelfLabel(){
+  if(!scn||selfLabel)return;
+  selfLabel=scn.add.text(player.x,player.y-34,myName,{fontSize:'11px',fontFamily:'sans-serif',color:'#ffe9a8',stroke:'#1d2a22',strokeThickness:3}).setOrigin(.5).setDepth(9999);
+}
+function showBubble(id,t){
+  if(!scn)return;
+  SND.pop();
+  const mine=room&&id===room.sessionId;
+  const spr=mine?player:(remotes[id]&&remotes[id].spr);
+  if(!spr)return;
+  const b=scn.add.text(spr.x,spr.y-52,t,{fontSize:'12px',fontFamily:'sans-serif',color:'#1d2a22',backgroundColor:'#ffffff',padding:{x:7,y:4},wordWrap:{width:180}}).setOrigin(.5,1).setDepth(10001);
+  if(mine){if(selfBubble)selfBubble.destroy();selfBubble=b;setTimeout(()=>{if(selfBubble===b){b.destroy();selfBubble=null;}},4500);}
+  else{const r=remotes[id];if(r.bubble)r.bubble.destroy();r.bubble=b;setTimeout(()=>{if(r&&r.bubble===b){b.destroy();r.bubble=null;}},4500);}
+}
+function mpUpdate(v){
+  if(selfLabel)selfLabel.setPosition(player.x,player.y-34);
+  if(selfBubble)selfBubble.setPosition(player.x,player.y-52);
+  for(const id in remotes){
+    const r=remotes[id];
+    r.spr.x+=(r.tx-r.spr.x)*.25;r.spr.y+=(r.ty-r.spr.y)*.25;
+    const k=r.spr.texture.key;
+    if(r.m)r.spr.anims.play(k+'-walk-'+r.dir,true);
+    else{r.spr.anims.stop();r.spr.setFrame(({d:0,l:3,r:6,u:9})[r.dir]||0);}
+    r.spr.setDepth(r.spr.y);
+    if(r.sh){r.sh.setPosition(r.spr.x,r.spr.y+22);r.sh.setDepth(r.spr.y-1);}
+    r.label.setPosition(r.spr.x,r.spr.y-34);
+    if(r.bubble)r.bubble.setPosition(r.spr.x,r.spr.y-52);
+  }
+  if(mpOn&&room){
+    const now=performance.now();
+    if(now-lastSend>100){
+      lastSend=now;
+      room.send('move',{x:Math.round(player.x),y:Math.round(player.y),dir:lastDir,m:v.length()>1});
+    }
+  }
+}
+// ---------- 聊天 ----------
+function openChat(target){
+  if(!mpOn){toast('🌐 單人模式無法聊天');return;}
+  whisperTarget=target||null;
+  chatOpen=true;$('chatBar').classList.remove('hidden');
+  $('chatIn').placeholder=whisperTarget?('🔒 悄悄話給 '+whisperTarget+'… Enter 送出'):'說點什麼… Enter 送出';
+  scn.input.keyboard.enabled=false;scn.input.keyboard.disableGlobalCapture();
+  setTimeout(()=>$('chatIn').focus(),50);
+}
+function closeChat(){
+  chatOpen=false;whisperTarget=null;$('chatBar').classList.add('hidden');$('chatIn').value='';$('chatIn').blur();
+  $('chatIn').placeholder='說點什麼… Enter 送出';
+  scn.input.keyboard.enabled=true;scn.input.keyboard.enableGlobalCapture();
+}
+function sendChat(){
+  const t=$('chatIn').value.trim();
+  if(t&&room){
+    if(whisperTarget)room.send('whisper',{to:whisperTarget,t:t});
+    else room.send('chat',t);
+  }
+  closeChat();
+}
+// ---------- 💬 左下角對話記錄區 ----------
+function escTxt(s){return String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+function pushMsg(html,cls){
+  const log=$('chatLog');if(!log)return;
+  log.classList.remove('hidden');
+  const d=document.createElement('div');d.className='msg'+(cls?' '+cls:'');d.innerHTML=html;
+  log.appendChild(d);
+  while(log.children.length>7)log.removeChild(log.firstChild);
+}
+function logChat(name,t,mine){
+  pushMsg('<b>'+escTxt(mine?'你':name)+'：</b>'+escTxt(t));
+}
+function logWhisper(d){
+  if(d.self){
+    pushMsg('🔒 <b>你 → '+escTxt(d.to)+'：</b>'+escTxt(d.t)+(d.delivered?'':' <span style="color:#e6a">(對方目前不在線)</span>'),'wh');
+  }else{
+    pushMsg('🔒 <b>'+escTxt(d.from)+' 悄悄對你說：</b>'+escTxt(d.t),'wh');
+  }
+}
+function logSys(t){pushMsg('🌐 '+escTxt(t),'sys');}
+// ---------- 🧑‍🤝‍🧑 好友與在線玩家 ----------
+function saveFriends(){try{localStorage.setItem('kiwiLifeFriends',JSON.stringify(friends));}catch(e){}}
+function onlineNames(){
+  const set={};
+  for(const id in mpPlayers){const p=mpPlayers[id];if(p&&p.name)set[p.name]=true;}
+  return set;
+}
+function isOnline(name){return !!onlineNames()[name];}
+function addFriend(name){
+  name=String(name||'').trim();
+  if(!name)return;
+  if(name===myName){toast('那是你自己啦 😄');return;}
+  if(friends.includes(name)){toast('💛 '+name+' 已經是好友了');return;}
+  friends.push(name);saveFriends();SND.ok();toast('🧑‍🤝‍🧑 已加 '+name+' 為好友');
+  openFriends();
+}
+function removeFriend(name){
+  friends=friends.filter(f=>f!==name);saveFriends();SND.blip();
+  openFriends();
+}
+function whisperTo(name){
+  if(!isOnline(name)){toast('💤 '+name+' 目前不在線，無法私訊');return;}
+  closeOv();openChat(name);
+}
+function openFriends(){
+  guideOpen=true;
+  const on=onlineNames();
+  // 在線玩家（排除自己與已是好友者）
+  const others=[];
+  for(const id in mpPlayers){
+    if(room&&id===room.sessionId)continue;
+    const p=mpPlayers[id];if(!p||!p.name)continue;
+    if(!others.includes(p.name))others.push(p.name);
+  }
+  let h='';
+  if(!mpOn){
+    h+='<p style="color:#f0a04b;font-size:13px">🌐 目前是單人模式，連上伺服器後才看得到其他玩家。</p>';
+  }
+  // 我的好友
+  h+='<div class="flSec">💛 我的好友（'+friends.length+'）</div>';
+  if(!friends.length){
+    h+='<p style="font-size:12px;color:#9bb">還沒有好友。從下方在線玩家加好友吧！</p>';
+  }else{
+    friends.slice().sort((a,b)=>(on[b]?1:0)-(on[a]?1:0)).forEach(f=>{
+      const online=!!on[f];
+      h+='<div class="flRow"><span class="nm"><span class="flDot '+(online?'on':'off')+'"></span>'+escTxt(f)+'</span>'+
+         (online?'<button class="flBtn sec" onclick="whisperTo(\''+escAttr(f)+'\')">🔒 悄悄話</button>':'<span style="font-size:11px;color:#9bb">離線</span>')+
+         '<button class="flBtn del" onclick="removeFriend(\''+escAttr(f)+'\')">移除</button></div>';
+    });
+  }
+  // 在線玩家
+  h+='<div class="flSec">👥 在線玩家（'+others.length+'）</div>';
+  if(!others.length){
+    h+='<p style="font-size:12px;color:#9bb">'+(mpOn?'目前小鎮裡只有你一個人。':'—')+'</p>';
+  }else{
+    others.forEach(nm=>{
+      const isF=friends.includes(nm);
+      h+='<div class="flRow"><span class="nm"><span class="flDot on"></span>'+escTxt(nm)+'</span>'+
+         (isF?'<button class="flBtn sec" onclick="whisperTo(\''+escAttr(nm)+'\')">🔒 悄悄話</button><span style="font-size:11px;color:#9be37c">好友</span>'
+             :'<button class="flBtn" onclick="addFriend(\''+escAttr(nm)+'\')">＋ 加好友</button>')+'</div>';
+    });
+  }
+  openOv('<h2>🧑‍🤝‍🧑 好友與在線玩家</h2>'+
+    '<div style="max-height:60vh;overflow:auto">'+h+'</div>'+
+    '<button class="btn gray" onclick="closeOv()">關閉</button>');
+}
+function escAttr(s){return String(s||'').replace(/['\\]/g,'\\$&').replace(/"/g,'&quot;').replace(/[<>]/g,'');}
+document.addEventListener('keydown',e=>{
+  const tg=e.target;
+  if(tg&&tg.id!=='chatIn'&&(tg.tagName==='INPUT'||tg.tagName==='TEXTAREA'))return;
+  if(e.key==='Enter'){
+    if(chatOpen)sendChat();
+    else if(mpOn&&!dialogOpen&&!overlayOpen)openChat();
+  }else if(e.key==='Escape'){
+    if(chatOpen)closeChat();
+    else if(choiceOpen)closeChoice();
+    else if(mapOpen)toggleMap();
+    else if(guideOpen)closeOv();
+  }else if((e.key==='m'||e.key==='M')&&!chatOpen&&!dialogOpen&&(!overlayOpen||mapOpen)){
+    toggleMap();
+  }else if((e.key==='g'||e.key==='G')&&!chatOpen&&!dialogOpen){
+    if(guideOpen)closeOv();else if(!overlayOpen)openGuide();
+  }else if((e.key==='p'||e.key==='P')&&!chatOpen&&!dialogOpen){
+    if(guideOpen)closeOv();else if(!overlayOpen)openProfile();
+  }else if((e.key==='b'||e.key==='B')&&!chatOpen&&!dialogOpen&&!overlayOpen){
+    toggleBike();
+  }else if((e.key==='f'||e.key==='F')&&!chatOpen&&!dialogOpen&&!overlayOpen){
+    toggleTorch();
+  }else if((e.key==='c'||e.key==='C')&&!chatOpen&&!dialogOpen&&!overlayOpen){
+    useCamera();
+  }
+});
+
+// ---------- 📖 小鎮指南：真實住宿與餐廳 ----------
+// ---------- 🧢 精靈系統：遭遇・收服・對戰 ----------
+const DEX={
+ kiwi:    {n:'奇異鳥 Kiwi',e:'🥝',t:'普',hp:26,atk:7,df:6,spd:4,cr:.55,moves:[['啄擊',8,'普'],['挖洞突襲',11,'普'],['可愛魅惑',6,'普']]},
+ steamy:  {n:'蒸氣精靈 Steamy',e:'♨️',t:'火',hp:22,atk:8,df:4,spd:6,cr:.45,moves:[['熱氣噴發',9,'火'],['硫磺煙',7,'火'],['撞擊',6,'普']]},
+ eel:     {n:'長鰭鰻 Tuna',e:'🐍',t:'水',hp:25,atk:7,df:5,spd:5,cr:.5,moves:[['水流尾鞭',9,'水'],['滑溜纏繞',7,'普'],['泡沫光線',10,'水']]},
+ fantail: {n:'扇尾鳥 Pīwakawaka',e:'🐦',t:'飛',hp:20,atk:6,df:4,spd:9,cr:.6,moves:[['俯衝',8,'飛'],['羽毛舞',6,'飛'],['啁啾',5,'普']]},
+ kea:     {n:'啄羊鸚鵡 Kea',e:'🦜',t:'飛',hp:24,atk:9,df:5,spd:7,cr:.4,moves:[['利喙鉗咬',11,'飛'],['調皮搗蛋',7,'普'],['高空俯衝',12,'飛']]},
+ hedgehog:{n:'刺蝟 Hedgehog',e:'🦔',t:'普',hp:23,atk:6,df:9,spd:3,cr:.6,moves:[['尖刺防禦反擊',8,'普'],['滾動衝撞',9,'普']]},
+ possum:  {n:'帚尾袋貂 Possum',e:'🐀',t:'普',hp:24,atk:7,df:5,spd:6,cr:.55,moves:[['夜間突襲',9,'普'],['抓撓',7,'普']]},
+ tuatara: {n:'喙頭蜥 Tuatara',e:'🦎',t:'靈',hp:28,atk:8,df:8,spd:3,cr:.3,moves:[['遠古之力',11,'靈'],['第三眼凝視',8,'靈'],['咬住',7,'普']]},
+ weta:    {n:'巨沙螽 Wētā',e:'🦗',t:'草',hp:22,atk:8,df:6,spd:5,cr:.5,moves:[['彈跳踢',9,'草'],['鋸齒腿',8,'草']]},
+ morepork:{n:'貓頭鷹 Ruru',e:'🦉',t:'靈',hp:25,atk:8,df:6,spd:7,cr:.35,moves:[['暗夜俯衝',11,'靈'],['催眠凝視',8,'靈'],['利爪',7,'飛']]},
+ glow:    {n:'螢光精靈 Glowworm',e:'✨',t:'靈',hp:18,atk:6,df:4,spd:8,cr:.45,moves:[['星光閃爍',8,'靈'],['迷幻光點',9,'靈']]},
+ trout:   {n:'彩虹鱒 Trout',e:'🐟',t:'水',hp:21,atk:7,df:5,spd:7,cr:.55,moves:[['激流衝撞',9,'水'],['甩尾',7,'普']]}
+};
+const TYPEX={水:{火:1.5},火:{草:1.5},草:{水:1.5},飛:{草:1.5},靈:{靈:1.3}};
+const WILD_AREAS=[
+ {name:'Hanmer Forest',x:56,y:1,w:7,h:46,tbl:[['weta',1],['fantail',1],['morepork',.4],['tuatara',.25]],lv:[2,5]},
+ {name:'Conical Hill 森林',x:1,y:1,w:54,h:6,tbl:[['kea',1],['fantail',1],['kiwi',.5]],lv:[2,5]},
+ {name:'Brooke Dawson',x:44,y:34,w:8,h:8,tbl:[['hedgehog',1],['fantail',1],['glow',.3]],lv:[2,4]},
+ {name:'The Domain',x:12,y:27,w:11,h:7,tbl:[['hedgehog',1],['possum',1]],lv:[1,3]},
+ {name:'Tarndale',x:36,y:44,w:9,h:3,tbl:[['possum',1],['weta',1],['glow',.5],['kiwi',.4]],lv:[3,6]},
+ {name:'高爾夫草原',x:3,y:34,w:15,h:12,tbl:[['hedgehog',1],['kiwi',.5],['trout',.2]],lv:[1,4]},
+ {name:'溫泉園區',x:4,y:382,w:54,h:24,tbl:[['steamy',1],['glow',.5],['trout',.3]],lv:[3,7]}
+];
+function mkMon(id,lv){
+  const d=DEX[id],hp=d.hp+lv*3;
+  return {id,n:d.n,e:d.e,t:d.t,lv,hp,maxHp:hp,atk:d.atk+lv*2,df:d.df+lv,spd:d.spd+lv,exp:0,moves:d.moves};
+}
+S.party=[];S.balls=5;
+try{const pv=localStorage.getItem('kiwiLifeParty');if(pv){const o=JSON.parse(pv);S.party=o.party||[];S.balls=(o.balls==null?5:o.balls);}}catch(e){}
+function saveParty(){try{localStorage.setItem('kiwiLifeParty',JSON.stringify({party:S.party,balls:S.balls}));}catch(e){}}
+function healParty(f){S.party.forEach(m=>{m.hp=f?m.maxHp:Math.min(m.maxHp,m.hp+f);});}
+let btl=null;
+function bMsg(t,cb,d){$('btlMsg').textContent=t;$('btlBtns').innerHTML='';if(cb)setTimeout(cb,d||900);}
+function bBars(){
+  $('beHp').style.width=Math.max(0,btl.foe.hp/btl.foe.maxHp*100)+'%';
+  $('bmHp').style.width=Math.max(0,btl.me.hp/btl.me.maxHp*100)+'%';
+  $('beName').textContent=btl.foe.e+' 野生 '+btl.foe.n+' Lv.'+btl.foe.lv;
+  $('bmName').textContent=btl.me.e+' '+btl.me.n+' Lv.'+btl.me.lv+'　HP '+Math.max(0,Math.ceil(btl.me.hp))+'/'+btl.me.maxHp;
+  $('beSpr').textContent=btl.foe.e;$('bmSpr').textContent=btl.me.e;
+}
+function giveStarterFlow(){
+  showChoice('Ruru 爺爺的聲音','「年輕人！這片草叢有野生精靈出沒，先挑一隻夥伴保護自己吧！」',[
+    {label:'🥝 奇異鳥（普）',fn:()=>gainStarter('kiwi')},
+    {label:'♨️ 蒸氣精靈（火）',fn:()=>gainStarter('steamy')},
+    {label:'🐍 長鰭鰻（水）',fn:()=>gainStarter('eel')}
+  ]);
+}
+function gainStarter(id){
+  const m=mkMon(id,5);S.party.push(m);saveParty();SND.ok();
+  showDialog('Ruru 爺爺的聲音',[m.e+' '+m.n+'（Lv.5）加入了你的隊伍！','口袋裡也放了 5 顆 🥝 奇異球——打弱野生精靈再丟球，更容易收服！','按 P 可以查看你的精靈隊伍。']);
+}
+function startBattle(area){
+  if(!S.party.length){giveStarterFlow();return;}
+  const mine=S.party.find(m=>m.hp>0);
+  if(!mine){toast('😵 精靈們都沒力氣了…去睡覺或泡溫泉恢復');return;}
+  const tot=area.tbl.reduce((a,b)=>a+b[1],0);let r=Math.random()*tot,sp=area.tbl[0][0];
+  for(const it of area.tbl){r-=it[1];if(r<=0){sp=it[0];break;}}
+  const lv=area.lv[0]+((Math.random()*(area.lv[1]-area.lv[0]+1))|0);
+  btl={foe:mkMon(sp,lv),me:mine,over:false};
+  overlayOpen=true;autoPath=null;
+  $('battle').classList.remove('hidden');
+  bBars();SND.bad();
+  bMsg('草叢裡跳出了野生的 '+btl.foe.n+'（Lv.'+btl.foe.lv+'）！',playerTurn);
+}
+function playerTurn(){
+  if(!btl||btl.over)return;
+  const bb=$('btlBtns');bb.innerHTML='';
+  const safe=fn=>()=>{try{fn();}catch(err){console.error(err);toast('⚠ 戰鬥錯誤：'+err.message);endBattle();}};
+  btl.me.moves.forEach((mv,i)=>{
+    const b=document.createElement('button');b.className='dlgBtn';
+    b.textContent=mv[0]+'（'+mv[2]+'）';b.onclick=safe(()=>doRound(i));bb.appendChild(b);
+  });
+  const c=document.createElement('button');c.className='dlgBtn';c.style.background='#b8543a';
+  c.textContent='🥝 奇異球 ×'+S.balls;c.onclick=safe(tryCatch);bb.appendChild(c);
+  const r=document.createElement('button');r.className='dlgBtn';r.style.background='#4a554e';
+  r.textContent='🏃 逃跑';r.onclick=safe(tryRun);bb.appendChild(r);
+  $('btlMsg').textContent='要怎麼做？';
+}
+function dmgCalc(a,d,mv){
+  const x=(TYPEX[mv[2]]&&TYPEX[mv[2]][d.t])||1;
+  return {v:Math.max(1,Math.round((a.atk*mv[1]/22-d.df/3)*(0.85+Math.random()*0.3)*x)),x};
+}
+function doRound(i){
+  const myMv=btl.me.moves[i];
+  const foeMv=btl.foe.moves[(Math.random()*btl.foe.moves.length)|0];
+  const meAtk=next=>{
+    const d=dmgCalc(btl.me,btl.foe,myMv);btl.foe.hp-=d.v;bBars();SND.blip();
+    bMsg(btl.me.n+' 使出「'+myMv[0]+'」！造成 '+d.v+' 傷害'+(d.x>1?'，效果絕佳！':''),()=>{btl.foe.hp<=0?winBattle():next();});
+  };
+  const foeAtk=next=>{
+    const d=dmgCalc(btl.foe,btl.me,foeMv);btl.me.hp-=d.v;bBars();SND.bad();
+    bMsg('野生 '+btl.foe.n+' 使出「'+foeMv[0]+'」！受到 '+d.v+' 傷害'+(d.x>1?'，效果絕佳！':''),()=>{btl.me.hp<=0?loseMon():next();});
+  };
+  if(btl.me.spd>=btl.foe.spd)meAtk(()=>foeAtk(playerTurn));
+  else foeAtk(()=>meAtk(playerTurn));
+}
+function winBattle(){
+  btl.over=true;
+  const xp=btl.foe.lv*9;btl.me.exp+=xp;
+  let msg='野生 '+btl.foe.n+' 倒下了！'+btl.me.n+' 獲得 '+xp+' EXP';
+  while(btl.me.exp>=btl.me.lv*20){
+    btl.me.exp-=btl.me.lv*20;btl.me.lv++;
+    btl.me.maxHp+=4;btl.me.hp=Math.min(btl.me.maxHp,btl.me.hp+6);
+    btl.me.atk+=2;btl.me.df+=1;btl.me.spd+=1;
+    msg+='　🆙 升到 Lv.'+btl.me.lv+'！';
+  }
+  S.stats.wins=(S.stats.wins||0)+1;bBars();SND.ok();
+  bMsg(msg,endBattle,1600);
+}
+function loseMon(){
+  bMsg(btl.me.n+' 倒下了…',()=>{
+    const nxt=S.party.find(m=>m.hp>0);
+    if(nxt){btl.me=nxt;bBars();bMsg('上吧，'+nxt.n+'！',playerTurn);}
+    else{
+      btl.over=true;
+      S.money=Math.max(0,S.money-10);healParty(true);ui();
+      bMsg('眼前一黑……精靈們被好心人送到溫泉休養，恢復了精神（損失 $10）',endBattle,1800);
+    }
+  },1000);
+}
+function tryCatch(){
+  if(S.balls<=0){bMsg('沒有奇異球了！Four Square 有賣（$8）',playerTurn,1200);return;}
+  S.balls--;
+  const f=btl.foe,base=DEX[f.id].cr;
+  const p=Math.max(.06,Math.min(.92,base*(1.35-f.hp/f.maxHp)));
+  bMsg('丟出奇異球！…搖晃中……',()=>{
+    if(Math.random()<p){
+      btl.over=true;S.stats.caught=(S.stats.caught||0)+1;SND.ok();
+      let msg='🎉 收服了 '+f.e+' '+f.n+'（Lv.'+f.lv+'）！';
+      if(S.party.length<6){S.party.push(f);msg+=' 加入隊伍！';}
+      else msg+=' 隊伍已滿，送往 i-SITE 保管箱（之後版本可領回）';
+      saveParty();bMsg(msg,endBattle,1800);
+    }else{
+      SND.bad();
+      bMsg('啊！'+f.n+' 掙脫了奇異球！',()=>{
+        const mv=f.moves[(Math.random()*f.moves.length)|0];
+        const d=dmgCalc(f,btl.me,mv);btl.me.hp-=d.v;bBars();
+        bMsg('野生 '+f.n+' 使出「'+mv[0]+'」！受到 '+d.v+' 傷害',()=>{btl.me.hp<=0?loseMon():playerTurn();});
+      },900);
+    }
+  },1100);
+}
+function tryRun(){
+  if(Math.random()<.75){btl.over=true;bMsg('成功逃走了！',endBattle,800);}
+  else{
+    const mv=btl.foe.moves[(Math.random()*btl.foe.moves.length)|0];
+    const d=dmgCalc(btl.foe,btl.me,mv);btl.me.hp-=d.v;bBars();SND.bad();
+    bMsg('逃不掉！野生 '+btl.foe.n+' 使出「'+mv[0]+'」！受到 '+d.v+' 傷害',()=>{btl.me.hp<=0?loseMon():playerTurn();});
+  }
+}
+function endBattle(){
+  $('battle').classList.add('hidden');
+  overlayOpen=false;btl=null;saveParty();ui();
+}
+let lastEncTile='';
+function encounterCheck(tx,ty){
+  const key=tx+','+ty;if(key===lastEncTile)return;lastEncTile=key;
+  const t=layer.getTileAt(tx,ty);
+  if(!t||[0,8,9].indexOf(t.index)<0)return;
+  for(const a of WILD_AREAS){
+    if(tx>=a.x&&tx<a.x+a.w&&ty>=a.y&&ty<a.y+a.h){
+      if(Math.random()<0.10)startBattle(a);
+      return;
+    }
+  }
+}
+
+// ---------- 👤 個人資料與履歷表 ----------
+S.cv=null;S.stats={earned:0,shifts:0,soak:0};
+try{const sv=localStorage.getItem('kiwiLifeCV');if(sv)S.cv=JSON.parse(sv);}catch(e){}
+let profTab='me';
+function openProfile(tab){
+  profTab=tab||profTab;guideOpen=true;
+  if(scn){scn.input.keyboard.enabled=false;scn.input.keyboard.disableGlobalCapture();}
+  const cv=S.cv||{};
+  const esc=t=>(t||'').replace(/[<>"&]/g,'');
+  let body;
+  if(profTab==='me'){
+    const jobs=Object.keys(S.jobs||{}).length;
+    const badges=[
+      {e:'🎓',t:'履歷完成',on:!!(cv.name&&cv.visa)},
+      {e:'💼',t:'第一份工作',on:jobs>=1},
+      {e:'🏆',t:'打工王（5 份工作）',on:jobs>=5},
+      {e:'🎣',t:'釣魚高手（5 條）',on:S.fishCaught>=5},
+      {e:'♨',t:'溫泉常客（泡 10 分鐘）',on:S.stats.soak>=10},
+      {e:'💰',t:'小富翁（$200）',on:S.money>=200},
+      {e:'🧢',t:'精靈訓練家（收服 3 隻）',on:(S.stats.caught||0)>=3},
+      {e:'⚔️',t:'對戰高手（勝 10 場）',on:(S.stats.wins||0)>=10}
+    ].map(b=>'<span class="badge'+(b.on?'':' off')+'">'+b.e+' '+b.t+'</span>').join('');
+    const party=(S.party&&S.party.length)?S.party.map(m=>
+      '<div class="pRow"><span>'+m.e+' '+m.n+' Lv.'+m.lv+'</span><b style="color:'+(m.hp<=0?'#ef6e6e':'#9be37c')+'">HP '+Math.max(0,Math.ceil(m.hp))+'/'+m.maxHp+'</b></div>').join('')
+      :'<div class="pRow"><span>還沒有精靈</span><b>去草叢/森林走走！</b></div>';
+    body='<h2 style="font-size:15px;margin-bottom:4px">🧢 精靈隊伍（'+(S.party?S.party.length:0)+'/6）　🥝 奇異球 ×'+S.balls+'</h2>'+party+
+      '<h2 style="font-size:15px;margin:10px 0 4px">👤 基本資料</h2>'+
+      '<div class="pRow"><span>👤 暱稱</span><b>'+esc(myName||'(未開始)')+'</b></div>'+
+      '<div class="pRow"><span>📅 來到 Hanmer Springs</span><b>第 '+S.day+' 天</b></div>'+
+      '<div class="pRow"><span>💰 存款</span><b>$'+Math.floor(S.money)+'</b></div>'+
+      '<div class="pRow"><span>📋 任務進度</span><b>'+(S.quest+1)+' / '+QUESTS.length+'</b></div>'+
+      '<div class="pRow"><span>💼 錄取的工作</span><b>'+(jobs?jobs+' 份':'還沒有')+'</b></div>'+
+      '<div class="pRow"><span>🕑 打工總收入</span><b>$'+S.stats.earned+'（'+S.stats.shifts+' 班）</b></div>'+
+      '<div class="pRow"><span>🎣 釣到的魚</span><b>'+S.fishCaught+' 條</b></div>'+
+      '<div class="pRow"><span>♨ 泡湯累計</span><b>'+S.stats.soak.toFixed(1)+' 分鐘</b></div>'+
+      '<h2 style="font-size:15px;margin-top:10px">🏅 成就</h2>'+badges;
+  }else{
+    const sel=(id,cur,arr)=>'<select id="'+id+'">'+arr.map(o=>'<option'+(cur===o?' selected':'')+'>'+o+'</option>').join('')+'</select>';
+    body='<p style="font-size:12px;color:#9bb;margin-bottom:6px">老闆會看履歷決定要不要錄取你——填好之後去找老闆「💼 應徵工作」！</p>'+
+      '<div class="cvRow"><label>姓名 *</label><input id="cvName" maxlength="24" value="'+esc(cv.name||myName||'')+'" placeholder="你的名字"></div>'+
+      '<div class="cvRow" style="display:flex;gap:8px"><div style="flex:1"><label>年齡</label><input id="cvAge" maxlength="3" value="'+esc(cv.age||'')+'" placeholder="如 25"></div>'+
+      '<div style="flex:2"><label>國籍／來自</label><input id="cvNat" maxlength="20" value="'+esc(cv.nat||'')+'" placeholder="如 台灣"></div></div>'+
+      '<div class="cvRow"><label>簽證類型 *</label>'+sel('cvVisa',cv.visa,['打工度假簽證（WHV）','學生簽證','觀光簽證','紐西蘭居民'])+'</div>'+
+      '<div class="cvRow"><label>英文程度</label>'+sel('cvEng',cv.eng,['初級（敢比手畫腳）','中級（日常溝通 OK）','流利','母語程度'])+'</div>'+
+      '<div class="cvRow"><label>技能（咖啡、烘焙、開車…）</label><input id="cvSkill" maxlength="40" value="'+esc(cv.skill||'')+'" placeholder="如 咖啡拉花、會開手排車"></div>'+
+      '<div class="cvRow"><label>工作經驗</label><textarea id="cvExp" maxlength="120" placeholder="如 在台北的咖啡店做過兩年外場">'+esc(cv.exp||'')+'</textarea></div>'+
+      '<div class="cvRow"><label>自我介紹</label><textarea id="cvIntro" maxlength="120" placeholder="一句話讓老闆記住你！">'+esc(cv.intro||'')+'</textarea></div>'+
+      '<button class="btn" onclick="saveCV()">💾 儲存履歷</button>'+
+      '<button class="btn" style="background:#c77d2e" onclick="applyJob()">💼 送出應徵</button>'+
+      (S.applied?'<p style="font-size:12px;color:#9be37c;margin-top:6px">✅ 履歷已寄給老闆，可重複寄送</p>':'<p style="font-size:12px;color:#9bb;margin-top:6px">填好履歷後按「送出應徵」，會把你的履歷寄到店家信箱</p>');
+  }
+  openOv('<h2>👤 '+(profTab==='me'?'個人資料':'我的履歷表')+'</h2>'+
+    '<div style="margin-bottom:8px">'+
+    '<button class="gTab'+(profTab==='me'?' on':'')+'" onclick="openProfile(\'me\')">👤 個人資料</button>'+
+    '<button class="gTab'+(profTab==='cv'?' on':'')+'" onclick="openProfile(\'cv\')">📄 履歷表'+(S.cv&&S.cv.name?' ✓':' ❗')+'</button></div>'+
+    '<div style="max-height:56vh;overflow:auto">'+body+'</div>'+
+    '<button class="btn gray" onclick="closeOv()">關閉（Esc）</button>');
+}
+function captureCV(){          // 若履歷表單在畫面上，擷取最新輸入
+  if(!$('cvName'))return;
+  S.cv={
+    name:$('cvName').value.trim(),age:$('cvAge').value.trim(),nat:$('cvNat').value.trim(),
+    visa:$('cvVisa').value,eng:$('cvEng').value,skill:$('cvSkill').value.trim(),
+    exp:$('cvExp').value.trim(),intro:$('cvIntro').value.trim()
+  };
+  try{localStorage.setItem('kiwiLifeCV',JSON.stringify(S.cv));}catch(e){}
+}
+function saveCV(){
+  captureCV();
+  if(!S.cv||!S.cv.name){toast('❗ 至少要填姓名');return;}
+  SND.ok();toast('💾 履歷已儲存！按「💼 送出應徵」寄給老闆');
+  openProfile('cv');
+}
+// ---------- 💼 送出應徵：把履歷寄到店家信箱 ----------
+function applyJob(){
+  captureCV();
+  if(!S.cv||!S.cv.name){toast('❗ 請先填寫履歷（至少姓名）再應徵');return;}
+  const cv=S.cv;
+  const esc=t=>(t||'').replace(/[<>"&]/g,'');
+  const row=(k,v)=>v?'<div style="margin:2px 0"><b style="color:#9be37c">'+k+'：</b>'+esc(v)+'</div>':'';
+  openOv('<h2>💼 送出應徵</h2>'+
+    '<p style="font-size:13px">確定把以下履歷寄到店家信箱嗎？<br><small style="color:#9bb">📧 收件：'+JOB_EMAIL+'</small></p>'+
+    '<div style="background:#26352c;border-radius:8px;padding:10px;font-size:12px;line-height:1.6;margin:8px 0">'+
+      row('姓名',cv.name)+row('年齡',cv.age)+row('國籍／來自',cv.nat)+row('簽證',cv.visa)+
+      row('英文',cv.eng)+row('技能',cv.skill)+row('經驗',cv.exp)+row('自我介紹',cv.intro)+
+    '</div>'+
+    '<p style="font-size:12px;color:#9bb">按確定會開啟你的郵件 App，內容都幫你填好了，按「送出」即可寄達老闆信箱。</p>'+
+    '<button class="btn" style="background:#c77d2e" onclick="sendApplication()">✉ 確定送出</button>'+
+    '<button class="btn gray" onclick="openProfile(\'cv\')">再想想</button>');
+}
+function sendApplication(){
+  const cv=S.cv||{};
+  const subject='Fire & Ice 應徵 — '+(cv.name||'')+' 的履歷';
+  const L=['您好，我想應徵 Fire & Ice 咖啡餐廳的工作，以下是我的履歷：',''];
+  L.push('姓名：'+(cv.name||''));
+  if(cv.age)L.push('年齡：'+cv.age);
+  if(cv.nat)L.push('國籍／來自：'+cv.nat);
+  if(cv.visa)L.push('簽證類型：'+cv.visa);
+  if(cv.eng)L.push('英文程度：'+cv.eng);
+  if(cv.skill)L.push('技能：'+cv.skill);
+  if(cv.exp)L.push('工作經驗：'+cv.exp);
+  if(cv.intro)L.push('自我介紹：'+cv.intro);
+  L.push('','期待您的回覆，謝謝！');
+  const url='mailto:'+JOB_EMAIL+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(L.join('\n'));
+  const a=document.createElement('a');a.href=url;a.style.display='none';
+  document.body.appendChild(a);a.click();a.remove();   // 開啟郵件 App，不離開遊戲
+  S.applied=true;
+  if(typeof SND!=='undefined'&&SND)SND.ok();
+  closeOv();
+  toast('✉ 已開啟郵件，按「送出」就把履歷寄給老闆了！');
+  ui();
+}
+$('btnProfile').addEventListener('click',()=>{if(!dialogOpen&&!chatOpen&&!overlayOpen)openProfile();});
+$('btnFriends').addEventListener('click',()=>{if(!dialogOpen&&!chatOpen&&!overlayOpen)openFriends();});
+$('online').addEventListener('click',()=>{if(!dialogOpen&&!chatOpen&&!overlayOpen)openFriends();});
+
+// ---------- 🧑‍🍳 門口老闆系統：了解店家／菜單／應徵打工 ----------
+const SHOPKEEPERS=[
+ {key:'spice',name:'Raj',title:'Spice Village',tx:44.2,ty:18.3,
+  pal:{skin:'#b97a4b',hair:'#191512',shirt:'#e0533f',pants:'#33302c'},
+  hello:'Namaste！我是 Raj，想來點道地的印度料理嗎？',
+  about:['我們家三代都做香料生意，2010 年從旁遮普搬來 Hanmer。','招牌是奶油雞和現烤 Naan，香料全是自己磨的。','滑雪季的晚上總是客滿，記得早點來！'],
+  menu:['🍛 奶油雞咖哩 $24','🍢 烤雞串 Tandoori $22','🫓 現烤 Naan $6','🥬 素食咖哩 $20','🍚 香料飯 $8'],
+  jobDesc:['我們在找外場服務生！','工作內容：帶位、點餐、端盤子，偶爾幫忙烤 Naan。','一班 2 小時，時薪不錯，還包一餐咖哩。'],pay:[16,24]},
+ {key:'saints',name:'Sophie',title:'Saints Café',tx:28.2,ty:11.3,
+  pal:{skin:'#f8dcc0',hair:'#e8b94f',shirt:'#3f7d52',pants:'#34537e',long:true},
+  hello:'Hi！我是 Sophie，Saints 的店長，今天想吃披薩嗎？',
+  about:['Saints 開在 Village Shopping Centre 裡十多年了。','我們的窯烤披薩和肋眼牛排是鎮上出名的。','橄欖球轉播日整間店都會擠滿人！'],
+  menu:['🍕 瑪格麗特披薩 $24','🍕 BBQ 烤雞披薩 $28','🥩 肋眼牛排 $38','🍝 海鮮義大利麵 $30','🍺 生啤 $10'],
+  jobDesc:['缺一位披薩助手！','工作內容：揉麵團、備料、顧窯爐。','不怕熱的話很好上手，一班 2 小時。'],pay:[15,22]},
+ {key:'rustic',name:'Marco',title:'Rustic Café & Tapas',tx:36.2,ty:32.3,
+  pal:{skin:'#eebd92',hair:'#3a2c1e',shirt:'#9b59b6',pants:'#33302c',spiky:true},
+  hello:'Hola！我是 Marco，來杯咖啡配 tapas 如何？',
+  about:['我從巴塞隆納來，把西班牙小食帶到紐西蘭。','Tapas 就是「什麼都點一點、大家分著吃」。','我們的咖啡豆是 Christchurch 烘的，很講究！'],
+  menu:['🍤 蒜蝦 Gambas $16','🥔 西班牙烘蛋 $12','🧀 起司拼盤 $20','🥖 Bruschetta $12','☕ Flat White $5.5'],
+  jobDesc:['找一位咖啡學徒！','工作內容：拉花、做 tapas 擺盤、收吧台。','學會拉花這輩子都受用，一班 2 小時。'],pay:[14,20]},
+ {key:'bakery',name:'Anna',title:'Hanmer Springs Bakery',tx:41.2,ty:32.3,
+  pal:{skin:'#f8dcc0',hair:'#a8513c',shirt:'#f0a04b',pants:'#f2eee6',long:true,skirt:'#d96a4a'},
+  hello:'早安！我是 Anna，麵包都是今天凌晨出爐的喔。',
+  about:['我們凌晨 4 點就開始烤麵包了。','鎮上的咖啡店很多都用我們的吐司和可頌。','肉派 Mince Pie 是紐西蘭國民美食，一定要試！'],
+  menu:['🥧 經典肉派 $7.5','🥐 奶油可頌 $6','🍞 酸種吐司 $9','🧁 胡蘿蔔蛋糕 $7','☕ 美式咖啡 $4.5'],
+  jobDesc:['找烘焙助手！要早起喔。','工作內容：整形麵團、顧烤箱、上架包裝。','清晨上班、中午就下班，一班 2 小時。'],pay:[15,21]},
+ {key:'fivestags',name:'Hemi',title:'Five Stags',tx:46.2,ty:32.3,
+  pal:{skin:'#b97a4b',hair:'#23211f',shirt:'#4a6b53',pants:'#5a4a3a',hat:'#3a2c1e'},
+  hello:'Kia ora bro！我是 Hemi，今晚有鹿肉特餐喔。',
+  about:['Five Stags 主打紐西蘭鄉村菜，食材都是本地獵場和農場的。','五隻鹿的招牌就掛在門口，很好認。','家庭聚餐很適合，小孩有遊戲角落。'],
+  menu:['🦌 香煎鹿排 $42','🐑 慢燉羊肩 $36','🍔 野味漢堡 $26','🐟 炸魚薯條 $24','🍷 本地紅酒 $12'],
+  jobDesc:['缺廚房幫手！','工作內容：備料、洗鍋、擺盤，跟主廚學兩招。','週末晚上最忙，一班 2 小時。'],pay:[16,23]},
+ {key:'fudge',name:'Lucy',title:'The Decadent Fudge Co',tx:44.2,ty:28.3,
+  pal:{skin:'#f8dcc0',hair:'#7e57c2',shirt:'#ee7fa6',pants:'#f2eee6',long:true,skirt:'#e0608c'},
+  hello:'嗨嗨！我是 Lucy，要試吃今天的新口味嗎？🍬',
+  about:['我們的 fudge 全部手工小鍋熬煮。','口味每週換，黑巧海鹽是永遠的冠軍。','觀光客最愛帶一盒當伴手禮！'],
+  menu:['🍫 黑巧海鹽 fudge $9','🥜 花生焦糖 $9','🍓 草莓白巧 $9','🎁 綜合禮盒 $25','🍦 手工冰淇淋 $6'],
+  jobDesc:['找一位甜點小幫手！','工作內容：切塊、包裝、顧櫃台、招呼試吃。','整間店都是甜甜的味道，一班 2 小時。'],pay:[13,18]},
+ {key:'powerhouse',name:'George',title:'Powerhouse Café',tx:25.2,ty:13.3,
+  pal:{skin:'#eebd92',hair:'#666666',shirt:'#5d7a96',pants:'#33302c',hat:'#33302c'},
+  hello:'Morning！我是 George，來份招牌早午餐吧？',
+  about:['這棟是 1926 年的水力發電站，機具都還留著當裝飾。','我們的 Eggs Benedict 拿過坎特伯雷早午餐獎。','咖啡渣會送給鎮上的社區花園當肥料。'],
+  menu:['🍳 班尼迪克蛋 $24','🥞 莓果鬆餅 $19','🥑 酪梨吐司 $18','🍄 野菇燉飯 $26','🧃 現打果汁 $8'],
+  jobDesc:['找早班外場！','工作內容：送餐、收桌、做果汁。','早上很忙但下午就放風了，一班 2 小時。'],pay:[15,22]},
+ {key:'edit',name:'Victoria',title:'EDIT Hotel',tx:28.2,ty:34.3,
+  pal:{skin:'#f8dcc0',hair:'#23211f',shirt:'#33302c',pants:'#33302c',long:true,skirt:'#5d7a96'},
+  hello:'您好，我是 Victoria，EDIT 的經理。需要為您介紹嗎？',
+  about:['前身是 1932 年的 The Heritage 飯店，去年整修改名 EDIT。','Isobel\'s 餐廳就在大廳旁，主廚是奧克蘭來的。','花園婚禮是我們的招牌，夏天檔期都滿了。'],
+  menu:['🛏 標準雙人房 $189/晚','🛏 花園景觀房 $249/晚','🏡 獨棟 Villa $329/晚','🍽 Isobel\'s 晚餐套餐 $65','🥂 香檳下午茶 $39'],
+  jobDesc:['誠徵房務人員！','工作內容：整理客房、補備品、摺出完美的天鵝毛巾。','制服很好看，一班 2 小時。'],pay:[17,24]},
+ {key:'drifters',name:'Dave',title:'Drifters Inn',tx:49,ty:24.3,
+  pal:{skin:'#eebd92',hair:'#8a6238',shirt:'#7a4a2f',pants:'#3b3b3b'},
+  hello:'嘿！我是 Dave，找住的地方嗎？我們有空房！',
+  about:['Drifters 是家庭式汽車旅館，我跟太太經營 15 年了。','就在 Harrogate St 轉角，走去溫泉 3 分鐘。','櫃台有免費的滑雪場接駁時刻表。'],
+  menu:['🛏 標準房 $139/晚','🛏 家庭房（4 人）$179/晚','🍳 加購早餐 $15/人','🧖 溫泉門票套票 9 折','🐶 寵物加床 $20'],
+  jobDesc:['找櫃台小幫手！','工作內容：check-in/out、接電話、給觀光建議。','可以練英文又認識世界各地的旅人，一班 2 小時。'],pay:[15,21]},
+ {key:'top10',name:'Kate',title:'TOP 10 Holiday Park',tx:37.2,ty:41.3,
+  pal:{skin:'#f6cfa4',hair:'#d9a23f',shirt:'#3f7d52',pants:'#34537e',hat:'#3f7d52'},
+  hello:'Kia ora！我是 Kate，露營或小屋都有位喔！',
+  about:['我們是全國連鎖的 TOP 10，這間評價前三名。','有跳跳枕、遊戲室，小朋友玩到不想走。','旺季（12-2 月）一定要提早訂！'],
+  menu:['⛺ 電源營位 $55/晚','🚐 房車營位 $65/晚','🏡 標準小屋 $120/晚','🏡 豪華小屋（衛浴）$175/晚','🧺 洗衣代幣 $4'],
+  jobDesc:['找場地小幫手！','工作內容：巡場、整理營位、補沐浴備品。','騎著高爾夫球車到處跑，很好玩，一班 2 小時。'],pay:[15,20]}
+];
+function bossMenu(kp){
+  const opts=[
+    {label:'🏪 了解店家',fn:()=>showDialog(kp.name+'（'+kp.title+'）',kp.about)},
+    {label:'📋 菜單/價目',fn:()=>showDialog(kp.title+' 菜單',kp.menu)}
+  ];
+  if(S.jobs&&S.jobs[kp.key])opts.push({label:'💼 打工（2 小時）',fn:()=>bossWork(kp)});
+  else opts.push({label:'💼 應徵工作',fn:()=>jobIntro(kp)});
+  opts.push({label:'👋 沒事，先走了',fn:null});
+  showChoice(kp.name+'（'+kp.title+'）',kp.hello,opts);
+}
+function jobIntro(kp){
+  showDialog(kp.name+'（'+kp.title+'）',kp.jobDesc,()=>{
+    showChoice(kp.name,'怎麼樣，想來試試嗎？薪水一班 $'+kp.pay[0]+'–'+kp.pay[1]+'。',[
+      {label:'✅ 我要應徵！',fn:()=>applyJob(kp)},
+      {label:'🤔 再想想',fn:()=>showDialog(kp.name,['沒問題，隨時歡迎你回來！'])}
+    ]);
+  });
+}
+function applyJob(kp){
+  if(!S.cv||!S.cv.name){
+    showDialog(kp.name+'（'+kp.title+'）',[
+      '想應徵的話，先給我看你的履歷吧！',
+      '按 P（或右上角 👤）打開個人資料，填好「📄 履歷表」再來找我。'
+    ]);return;
+  }
+  S.jobs=S.jobs||{};S.jobs[kp.key]=true;SND.ok();
+  if(kp._mark)kp._mark.setVisible(false);
+  const cv=S.cv,lines=['我看看你的履歷……'+cv.name+(cv.nat?('，從 '+cv.nat+' 來的啊！'):'，嗯嗯。')];
+  if(cv.visa&&cv.visa.indexOf('打工度假')>=0)lines.push('打工度假簽證，OK，手續上沒問題！');
+  else if(cv.visa)lines.push('簽證是「'+cv.visa+'」，記得確認工作許可喔。');
+  if(cv.skill)lines.push('還會'+cv.skill+'？很加分！');
+  if(cv.exp)lines.push('有經驗（'+cv.exp.slice(0,30)+(cv.exp.length>30?'…':'')+'），上手會很快。');
+  if(cv.intro)lines.push('「'+cv.intro.slice(0,30)+(cv.intro.length>30?'…':'')+'」——我喜歡這句！');
+  lines.push('錄取！歡迎加入 '+kp.title+'！🎉');
+  lines.push('之後來找我選「💼 打工」，一班 2 小時 $'+kp.pay[0]+'–'+kp.pay[1]+'。');
+  showDialog(kp.name+'（'+kp.title+'）',lines);
+}
+function bossWork(kp){
+  S.workedDay=S.workedDay||{};
+  if(S.workedDay[kp.key]===S.day){showDialog(kp.name,['今天的班已經上完啦，明天再來！']);return;}
+  if(S.energy<25){showDialog(kp.name,['你看起來累壞了，先去睡一覺吧。']);return;}
+  if(S.hunger<15){showDialog(kp.name,['肚子那麼餓怎麼工作？先吃點東西！']);return;}
+  S.workedDay[kp.key]=S.day;
+  S.energy=Math.max(0,S.energy-22);S.hunger=Math.max(0,S.hunger-12);
+  S.mins+=120;if(S.mins>=1440){S.mins-=1440;S.day++;}
+  const earn=kp.pay[0]+((Math.random()*(kp.pay[1]-kp.pay[0]+1))|0);
+  S.money+=earn;S.stats.earned+=earn;S.stats.shifts++;SND.coin();
+  toast('💼 在 '+kp.title+' 上完一班，賺了 $'+earn+'！');ui();
+}
+
+const GUIDE={
+  stay:[
+    {n:'Kakapo Lodge',a:'14 Amuri Ave',d:'背包客棧／青年旅館，走路 5 分鐘到溫泉。你住的地方！',i:'床位 NZ$30-50／晚｜共用廚房・暖爐',nav:[36,27]},
+    {n:'EDIT Hanmer Springs Hotel',a:'41 Amuri Ave',d:'歷史飯店（前身 The Heritage），內有 Isobel\'s 餐廳',i:'約 NZ$180-300／晚｜4 星｜花園與網球場',nav:[27,33]},
+    {n:'Drifters Inn',a:'2 Harrogate St',d:'溫馨汽車旅館，就在鎮中心橫街上',i:'約 NZ$130-180／晚',nav:[48,23]},
+    {n:'The St James',a:'Conical Hill Rd 一帶',d:'精品公寓式住宿，近村中心',i:'約 NZ$200-350／晚｜廚房・洗衣設備',nav:[42,6]},
+    {n:'Village Lake Apartments',a:'Conical Hill Rd 一帶',d:'湖景公寓，鄰近 Village Shopping Centre',i:'約 NZ$180-280／晚｜湖景陽台',nav:[36,6]},
+    {n:'Chalets Motel',a:'Conical Hill Rd',d:'小木屋風格汽車旅館，近 Conical Hill 步道',i:'約 NZ$140-200／晚｜山景小屋',nav:[16,12]},
+    {n:'ASURE Hanmer Inn Motel',a:'鎮中心',d:'在地夫妻經營的友善汽車旅館',i:'約 NZ$130-190／晚｜寵物友善房型',nav:[26,38]},
+    {n:'Hanmer Springs TOP 10 Holiday Park',a:'5 Hanmer Springs Rd',d:'營地＋小屋，家庭旅遊熱門',i:'營位約 NZ$50-80・小屋 NZ$100-180｜遊樂場',nav:[36,40]},
+    {n:'Alpine Adventure Holiday Park',a:'200 Jacks Pass Rd',d:'近郊營地，往 Jacks Pass 山路方向',i:'營位約 NZ$45-70｜安靜星空',nav:[8,12]},
+    {n:'Pines Holiday Park',a:'158 Argelins Rd',d:'松林間的安靜營地',i:'營位約 NZ$40-65｜近高爾夫球場',nav:[22,40]}
+  ],
+  eat:[
+    {n:'Fire & Ice Café Restaurant & Bar',a:'37 Amuri Ave',d:'全天候餐酒館，附兒童遊戲區。Tom 的店，可以打工！',i:'主餐約 NZ$25-40｜早午餐〜晚餐',nav:[36,23]},
+    {n:'No.31 Restaurant & Bar',a:'31 Amuri Ave',d:'現代歐陸料理：鹿肉、野兔、鵪鶉、本地起司',i:'主餐約 NZ$38-45｜晚餐｜建議訂位',nav:[43,23]},
+    {n:'Monteith\'s Brewery Bar (MCB)',a:'47 Amuri Ave',d:'西岸啤酒＋拼盤，室內外都有壁爐',i:'主餐約 NZ$25-38｜午餐・晚餐',nav:[36,17]},
+    {n:'Spice Village',a:'47 Amuri Ave',d:'高評價印度料理',i:'主餐約 NZ$20-28｜素食選項多',nav:[43,17]},
+    {n:'Isobel\'s Restaurant',a:'41 Amuri Ave（EDIT Hotel 內）',d:'飯店精緻餐廳',i:'飯店餐廳｜早餐・晚餐',nav:[27,33]},
+    {n:'Powerhouse Café',a:'8 Jacks Pass Rd',d:'1926 年水力發電站改建，早午餐名店',i:'早午餐約 NZ$15-28｜上午〜下午',nav:[24,12]},
+    {n:'Saints Café Restaurant & Bar',a:'3/24 Conical Hill Rd（Village Shopping Centre）',d:'牛排＋披薩的輕鬆餐酒館',i:'披薩約 NZ$22-30｜午餐・晚餐',nav:[27,10]},
+    {n:'Five Stags Hanmer Springs',a:'2 Fraser Close',d:'紐西蘭鄉村料理，菜單隨季節更換',i:'主餐約 NZ$28-42｜家庭友善',nav:[45,31]},
+    {n:'Rustic Café & Tapas Bar',a:'Amuri Ave 主街',d:'西班牙風 tapas 做成 Kiwi 風味',i:'Tapas 約 NZ$12-20｜咖啡・小酌',nav:[35,31]},
+    {n:'Hanmer Springs Bakery',a:'村中心',d:'現烤麵包與派，旅人補給站',i:'派・三明治約 NZ$6-12｜清晨開門',nav:[40,31]},
+    {n:'The Decadent Fudge Co',a:'村中心',d:'手工 fudge 甜點專賣',i:'fudge 約 NZ$8-15／盒',nav:[43,27]},
+    {n:'Four Square 超市',a:'12 Conical Hill Rd',d:'超市（含烘焙坊、肉舖）。Sam 在這上班！',i:'8:00-20:00（冬季至 19:30）',nav:[36,10]}
+  ]
+};
+let guideTab='eat',guideOpen=false;
+function openGuide(tab){
+  guideTab=tab||guideTab;guideOpen=true;
+  const list=GUIDE[guideTab].map(e=>
+    '<div class="gItem"><button class="btn" style="float:right;padding:4px 10px;font-size:12px;margin:0" onclick="navTo('+e.nav[0]+','+e.nav[1]+')">🧭 帶我去</button>'+
+    '<b>'+e.n+'</b><span class="gTag">🎮 可造訪</span>'+
+    '<small>📍 '+e.a+'<br>'+e.d+'<br>💡 '+e.i+'</small></div>').join('');
+  openOv('<h2>📖 Hanmer Springs 小鎮指南</h2>'+
+    '<div style="margin-bottom:8px">'+
+    '<button class="gTab'+(guideTab==='eat'?' on':'')+'" onclick="openGuide(\'eat\')">🍽 餐廳・咖啡（'+GUIDE.eat.length+'）</button>'+
+    '<button class="gTab'+(guideTab==='stay'?' on':'')+'" onclick="openGuide(\'stay\')">🛏 住宿（'+GUIDE.stay.length+'）</button></div>'+
+    '<div style="max-height:52vh;overflow:auto">'+list+'</div>'+
+    '<p style="margin-top:8px;font-size:11px;color:#9bb">真實店家整理｜💡 價格時間為參考，可能變動｜🧭 點「帶我去」角色會自動走到店門口並進店</p>'+
+    '<button class="btn gray" onclick="closeOv()">關閉（Esc）</button>');
+}
+$('btnGuide').addEventListener('click',()=>{if(!dialogOpen&&!chatOpen&&!overlayOpen)openGuide();});
+
+// ---------- 真實地圖（M 鍵 / 🗺 按鈕）----------
+let mapOpen=false;
+function toggleMap(){
+  mapOpen=!mapOpen;
+  if(mapOpen){$('mapOv').classList.remove('hidden');overlayOpen=true;updMapMark();SND.blip();}
+  else{$('mapOv').classList.add('hidden');overlayOpen=false;}
+}
+function updMapMark(){
+  requestAnimationFrame(()=>{
+    if(!player)return;
+    const img=$('mapImg');
+    // 在室內時，紅點顯示建築物門口位置
+    const px=curBld?curBld.door[0]*32:player.x;
+    const py=curBld?curBld.door[1]*32:player.y;
+    const fx=Math.max(0,Math.min(1,px/(MW*32))),fy=Math.max(0,Math.min(1,py/(MH*32)));
+    $('mapMark').style.left=(fx*img.clientWidth)+'px';
+    $('mapMark').style.top=(fy*img.clientHeight)+'px';
+  });
+}
+$('mapOv').addEventListener('pointerdown',e=>{e.stopPropagation();toggleMap();});
+$('btnMap').addEventListener('click',()=>{if(!dialogOpen&&!chatOpen&&(!overlayOpen||mapOpen))toggleMap();});
+$('mapImg').addEventListener('error',()=>{$('mapTip').textContent='⚠ 找不到地圖圖片「hanmer springs map.jpg」，請確認與遊戲檔在同一個資料夾';});
+$('chatSend').addEventListener('click',sendChat);
+$('btnChat').addEventListener('touchstart',e=>{e.preventDefault();chatOpen?closeChat():openChat();},{passive:false});
+$('btnSnd').addEventListener('click',()=>{SND.on=!SND.on;$('btnSnd').textContent=SND.on?'🔊':'🔇';if(SND.ctx&&SND.on)SND.ctx.resume();});
+
+// ---------- 啟動 ----------
+$('btnStart').addEventListener('click',()=>{
+  SND.init();
+  myName=($('pname').value.trim()||('Kiwi'+((Math.random()*900+100)|0)));
+  $('hudName').textContent='🥝 '+myName;
+  addSelfLabel();
+  connectMP();
+  $('intro').classList.add('hidden');
+  overlayOpen=false;
+  if('ontouchstart' in window){$('joy').classList.remove('hidden');$('btnAct').classList.remove('hidden');$('btnChat').classList.remove('hidden');}
+  setTimeout(()=>{
+    showDialog('旅程開始',[
+      '經過 134 公里的車程，巴士在 Hanmer Springs 南口停下。',
+      '空氣裡有淡淡的硫磺味和松樹香——這就是你的新家了。',
+      '📋 先沿著 Amuri Ave 往北走，到 i-SITE 遊客中心找 Aroha 報到吧！'
+    ]);
+  },400);
+});
+
+new Phaser.Game({
+  type:Phaser.AUTO,
+  parent:'game',
+  backgroundColor:'#5cad52',
+  scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},
+  physics:{default:'arcade',arcade:{debug:false}},
+  pixelArt:true,
+  scene:{create:create,update:update}
+});
+</script>
+</body>
+</html>

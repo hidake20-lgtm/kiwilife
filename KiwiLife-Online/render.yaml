@@ -1,0 +1,9 @@
+# Render 一鍵部署設定（Blueprint）
+services:
+  - type: web
+    name: kiwilife-hanmer
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
