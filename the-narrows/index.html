@@ -11,10 +11,13 @@
     --brass: #b9a27a;
     --lamp: #e8c48a;
     --veil: rgba(9, 12, 15, 0.72);
+    --danger: #c8553d;
+    --plasma: #8fdcf0;
     --display: "Cormorant SC", "Cormorant Garamond", Georgia, serif;
     --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
     color-scheme: dark;
   }
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body { background: var(--ink); color: var(--mist); overflow: hidden; font-family: var(--mono); }
   canvas#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
@@ -47,6 +50,47 @@
   #caption { left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); width: min(640px, calc(100% - 32px)); text-align: center;
     font-family: var(--display); font-size: 21px; letter-spacing: 0.06em; color: var(--mist); text-shadow: 0 1px 12px rgba(0,0,0,0.8); opacity: 0; transition: opacity 1.6s; }
   #caption.show { opacity: 1; }
+  #battlehud { top: calc(44px + env(safe-area-inset-top, 0px)); right: max(20px, env(safe-area-inset-right, 0px)); width: 240px; text-transform: uppercase; letter-spacing: 0.16em; font-variant-numeric: tabular-nums; }
+  #battlehud .row { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; }
+  #battlehud .stats { font-size: 10px; } #battlehud b { color: var(--mist); font-weight: 400; }
+  .bar { height: 3px; background: rgba(201,210,216,0.15); margin-top: 5px; position: relative; overflow: hidden; }
+  .bar i { position: absolute; inset: 0 auto 0 0; width: 100%; background: var(--mist); transition: width .2s; }
+  #battlehud .gun { display: none; } body.combat #battlehud .gun { display: block; }
+  #harp { color: var(--mist-dim); } #harp.ready { color: var(--lamp); }
+  #battle { position: fixed; top: calc(150px + env(safe-area-inset-top, 0px)); right: max(20px, env(safe-area-inset-right, 0px)); font: 11px var(--mono); letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--lamp); background: rgba(10,14,17,0.45); border: 1px solid rgba(232,196,138,0.4); padding: 10px 14px; cursor: pointer; }
+  #battle:focus-visible, #again:focus-visible { outline: 2px solid var(--lamp); outline-offset: 3px; }
+  body.combat #battle { color: var(--danger); border-color: rgba(200,85,61,0.6); }
+  #boss { position: fixed; top: calc(22px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); text-align: center; pointer-events: none; }
+  #boss-name { font-family: var(--display); font-size: 20px; letter-spacing: 0.3em; color: var(--plasma); text-transform: uppercase; }
+  #boss .bar { height: 4px; } #boss .bar i { background: var(--plasma); }
+  #cross { position: fixed; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; display: none;
+    border: 1px solid rgba(232,196,138,0.75); border-radius: 50%; }
+  #cross::before, #cross::after { content: ""; position: absolute; background: var(--lamp); }
+  #cross::before { left: 16px; top: -8px; width: 1px; height: 48px; opacity: .6; }
+  #cross::after { top: 16px; left: -8px; height: 1px; width: 48px; opacity: .6; }
+  body.combat #cross { display: block; } body.combat canvas#gl { cursor: none; }
+  #hitmark { position: fixed; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; opacity: 0; transform: rotate(45deg);
+    border-left: 2px solid var(--mist); border-right: 2px solid var(--mist); }
+  #hitmark.hit { opacity: 1; } #hitmark.crit { opacity: 1; border-color: var(--danger); width: 30px; height: 30px; margin: -15px 0 0 -15px; }
+  #dmg { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 160px 40px rgba(200,85,61,0.55); opacity: 0; }
+  #dmg.on { animation: dmg 0.9s ease-out; }
+  @keyframes dmg { from { opacity: 1; } to { opacity: 0; } }
+  body.combat #keys .ex { display: none; } body.combat #title { opacity: 0; }
+  #keys .fight-on { display: none; } body.combat #keys .fight-on { display: block; } body.combat #keys .fight { display: none; }
+  #t-combat { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(30px + env(safe-area-inset-bottom, 0px)); display: none; gap: 12px; }
+  #t-combat button { width: 78px; height: 78px; border-radius: 50%; font: 11px var(--mono); letter-spacing: 0.15em; text-transform: uppercase; touch-action: none;
+    color: var(--lamp); background: rgba(10,14,17,0.45); border: 1px solid rgba(232,196,138,0.5); }
+  #t-combat #t-harp { width: 62px; height: 62px; align-self: flex-end; font-size: 9px; }
+  @media (pointer: coarse) { body.combat #t-combat { display: flex; } }
+  #over { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center;
+    background: radial-gradient(ellipse at 50% 45%, rgba(60,20,14,0.35), rgba(6,8,10,0.85) 70%);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  #over h2 { margin: 0; font-family: var(--display); font-weight: 300; font-size: clamp(30px, 7vw, 62px); letter-spacing: 0.28em; color: var(--mist); text-wrap: balance; }
+  #over .sub { font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--mist-dim); }
+  #over-score { font-family: var(--display); font-size: 54px; color: var(--lamp); font-variant-numeric: tabular-nums; }
+  #again { font: 11px var(--mono); letter-spacing: 0.35em; text-transform: uppercase; color: var(--lamp); background: none; border: 1px solid rgba(232,196,138,0.45); padding: 14px 30px; cursor: pointer; margin-top: 8px; }
+  @media (max-width: 560px) { #battlehud { width: 190px; top: calc(40px + env(safe-area-inset-top, 0px)); } #battle { top: calc(140px + env(safe-area-inset-top, 0px)); } #title h1 { font-size: 22px; } }
   #touch { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(110px + env(safe-area-inset-bottom, 0px)); display: none; grid-template-columns: repeat(3, 52px); gap: 8px; }
   #touch button { width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(201,210,216,0.3); background: rgba(10,14,17,0.35); color: var(--mist); font: 16px var(--mono); touch-action: none; }
   #touch .sp { visibility: hidden; }
@@ -61,9 +105,11 @@
 <div class="hud" id="keys">
   <div><b>W / S</b>Throttle</div>
   <div><b>A / D</b>Rudder</div>
-  <div><b>Drag</b>Look around · <b>Wheel</b>Zoom</div>
-  <div><b>C</b>Camera · <b>Space</b>Horn</div>
-  <div><b>L</b>Searchlight · <b>H</b>Hide HUD</div>
+  <div class="ex"><b>Drag</b>Look around · <b>Wheel</b>Zoom</div>
+  <div class="ex"><b>C</b>Camera · <b>Space</b>Horn</div>
+  <div class="ex"><b>L</b>Searchlight · <b>H</b>Hide HUD</div>
+  <div class="fight"><b>F</b>Battle stations</div>
+  <div class="fight-on"><b>Mouse</b>Aim · <b>LMB</b>Cannon · <b>RMB / R</b>Harpoon · <b>Q / E</b>Turn view</div>
 </div>
 <div class="hud" id="gauge">
   <div class="big"><span id="kn">0.0</span><small style="font-size:14px;letter-spacing:.2em"> KN</small></div>
@@ -77,6 +123,27 @@
 </div>
 
 <div class="hud" id="caption" aria-live="polite"></div>
+<div class="hud" id="battlehud">
+  <div class="row"><span>Hull</span><span id="hull-val">100%</span></div>
+  <div class="bar"><i id="hull-fill"></i></div>
+  <div class="row stats"><span>Score <b id="score">0</b></span><span>Monsters <b id="kills">0</b></span><span>Birds <b id="birdsdown">0</b></span></div>
+  <div class="gun">
+    <div class="row"><span>Barrel heat</span><span id="harp">Harpoon ready</span></div>
+    <div class="bar"><i id="heat-fill"></i></div>
+  </div>
+</div>
+<button id="battle" type="button">Battle stations (F)</button>
+<div id="boss" hidden><div id="boss-name">Wyrm</div><div class="bar"><i id="boss-fill"></i></div></div>
+<div id="cross" aria-hidden="true"></div><div id="hitmark" aria-hidden="true"></div>
+<div id="dmg" aria-hidden="true"></div>
+<div id="t-combat"><button id="t-fire" type="button">Fire</button><button id="t-harp" type="button">Harpoon</button></div>
+<div id="over" hidden>
+  <h2>THE KESTREL IS LOST</h2>
+  <div class="sub">Final score</div>
+  <div id="over-score">0</div>
+  <div class="sub" id="over-stats"></div>
+  <button id="again" type="button">Sail again</button>
+</div>
 
 <div id="start">
   <h2>THE NARROWS</h2>
@@ -753,7 +820,7 @@ const waterMat = new THREE.ShaderMaterial({
       if (uSpotOn > 0.01) {
         vec3 L = vWorld - uSpotPos; float dl = length(L); L /= dl;
         float cone = smoothstep(0.9955, 0.9985, dot(L, uSpotDir));
-        float lit = cone * 2600.0 / (dl * dl + 1.0) * uSpotOn;
+        float lit = min(cone * 2600.0 / (dl * dl + 1.0), 3.0) * uSpotOn;
         col += vec3(0.62, 0.66, 0.72) * lit * (0.03 + 0.25 * max(dot(N, -L), 0.0) + foam * 0.6);
       }
       // fog
@@ -936,6 +1003,11 @@ const sz = t => BOAT_L / 2 * (1 - 2 * t);
   const deckLight = new THREE.PointLight(0xffe2b8, 18, 22, 2); deckLight.position.set(0, deckY + 4.0, BOAT_L / 2 - 1.2); boatBody.add(deckLight);
 }
 
+function nearFade(m) {
+  m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <fog_vertex>', 'gl_PointSize *= smoothstep(1.5, 9.0, -mvPosition.z);\n#include <fog_vertex>'); };
+  m.customProgramCacheKey = () => 'nearfade';
+  return m;
+}
 /* ============================================================
    ATMOSPHERE: mist banks, light shafts, drizzle, spray
    ============================================================ */
@@ -973,7 +1045,7 @@ const drizGeo = new THREE.BufferGeometry();
 const drizPos = new Float32Array(DRIZ * 3);
 for (let i = 0; i < DRIZ; i++) { drizPos[i * 3] = (Math.random() - 0.5) * 120; drizPos[i * 3 + 1] = Math.random() * 60; drizPos[i * 3 + 2] = (Math.random() - 0.5) * 120; }
 drizGeo.setAttribute('position', new THREE.BufferAttribute(drizPos, 3));
-const drizzle = new THREE.Points(drizGeo, new THREE.PointsMaterial({ map: dotTex, size: 0.18, color: 0xc0c9d0, transparent: true, opacity: 0.55, depthWrite: false, fog: true }));
+const drizzle = new THREE.Points(drizGeo, nearFade(new THREE.PointsMaterial({ map: dotTex, size: 0.12, color: 0xc0c9d0, transparent: true, opacity: 0.55, depthWrite: false, fog: true })));
 drizzle.frustumCulled = false;
 scene.add(drizzle);
 
@@ -983,7 +1055,7 @@ const sprayGeo = new THREE.BufferGeometry();
 const sprayPos = new Float32Array(SPRAY * 3).fill(-9999);
 const sprayVel = new Float32Array(SPRAY * 3), sprayLife = new Float32Array(SPRAY);
 sprayGeo.setAttribute('position', new THREE.BufferAttribute(sprayPos, 3));
-const spray = new THREE.Points(sprayGeo, new THREE.PointsMaterial({ map: dotTex, size: 0.55, color: 0xd5dde2, transparent: true, opacity: 0.7, depthWrite: false, fog: true }));
+const spray = new THREE.Points(sprayGeo, nearFade(new THREE.PointsMaterial({ map: dotTex, size: 0.55, color: 0xd5dde2, transparent: true, opacity: 0.7, depthWrite: false, fog: true })));
 spray.frustumCulled = false;
 scene.add(spray);
 let sprayHead = 0;
@@ -1134,9 +1206,10 @@ function makeWyrmMaterial(u) {
       .replace('#include <begin_vertex>', 'vec3 transformed = wyrmPos;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        uniform float uTime; uniform vec3 uEye; varying vec3 vRest; varying vec2 vWingV;
+        uniform float uTime; uniform vec3 uEye; uniform float uHit; varying vec3 vRest; varying vec2 vWingV;
         ${GLSL_VNOISE}`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        totalEmissiveRadiance += vec3(0.7, 0.9, 1.0) * uHit * 0.5;
         if (vWingV.x <= 0.0) {
           vec3 e = vec3(abs(vRest.x), vRest.y, vRest.z) - uEye;
           float eye = exp(-dot(e, e) / (uEye.x * uEye.x * 0.09));
@@ -1161,11 +1234,12 @@ class Wyrm {
     this.L = sea ? 170 : 250; this.R = sea ? 4.2 : 7.0; this.span = sea ? 0 : 60;
     const o = { L: this.L, R: this.R, span: this.span };
     const geo = buildWyrmGeo(o);
+    this.root = o.root || 0;
     this.spine = Array.from({ length: SPINE_N }, () => new THREE.Vector3());
     const rEye = this.R * wyrmProfile(0.022);
     this.u = {
-      uSpine: { value: this.spine }, uLen: { value: this.L }, uRoot: { value: o.root || 0 }, uFlap: { value: 0 },
-      uTime: rockUniforms.uTime, uEye: { value: new THREE.Vector3(rEye * 0.78, rEye * 0.3, 0.02 * this.L) }
+      uSpine: { value: this.spine }, uLen: { value: this.L }, uRoot: { value: this.root }, uFlap: { value: 0 },
+      uTime: rockUniforms.uTime, uEye: { value: new THREE.Vector3(rEye * 0.78, rEye * 0.3, 0.02 * this.L) }, uHit: { value: 0 }
     };
     this.mesh = new THREE.Mesh(geo, makeWyrmMaterial(this.u));
     this.mesh.frustumCulled = false;
@@ -1173,19 +1247,54 @@ class Wyrm {
     scene.add(this.mesh);
     this.active = false; this.wait = 0; this.tau = 0; this.d = {}; this.announced = false; this.head = new THREE.Vector3();
     this.speed = sea ? 7.5 : 23;
+    this.maxHp = sea ? 70 : 100; this.hp = this.maxHp;
+    this.state = 'cruise'; this.hostile = false; this.dying = false;
+    this.pos = new THREE.Vector3(); this.vel = new THREE.Vector3(); this.rec = new THREE.Vector3();
+    this.H = 700; this.hist = new Float32Array(this.H * 3); this.hHead = 0; this.hCount = 0;
+    this.boltCd = 2; this.strikeCd = 0; this.minD = 1e9; this.climbT = 0; this.roarCd = 0; this.splashed = false;
+    this.spheres = Array.from({ length: 32 }, () => ({ c: new THREE.Vector3(), r: 0, mul: 1, on: false }));
+    this.name = sea ? 'Gorge Serpent' : 'Wyrm';
+  }
+  pushHist(p) { const i = this.hHead * 3; this.hist[i] = p.x; this.hist[i + 1] = p.y; this.hist[i + 2] = p.z; this.hHead = (this.hHead + 1) % this.H; this.hCount = Math.min(this.H, this.hCount + 1); }
+  histAt(k, out) { const i = ((this.hHead - 1 - k) % this.H + this.H) % this.H * 3; return out.set(this.hist[i], this.hist[i + 1], this.hist[i + 2]); }
+  sampleSpine() {
+    const sp = this.L / (SPINE_N - 1);
+    const a = _wA.copy(this.rec), b = _wB;
+    this.spine[0].copy(a);
+    let k = 0, acc = 0, target = sp, i = 1;
+    while (i < SPINE_N) {
+      if (k >= this.hCount) { this.spine[i].copy(a); i++; continue; }
+      this.histAt(k, b);
+      const seg = a.distanceTo(b);
+      if (seg > 1e-4 && acc + seg >= target) { this.spine[i].lerpVectors(a, b, (target - acc) / seg); i++; target += sp; }
+      else { acc += seg; a.copy(b); k++; }
+    }
   }
   spawn(first) {
     const d = this.d;
+    this.hp = this.maxHp; this.dying = false; this.splashed = false; this.u.uHit.value = 0;
+    this.hostile = game.combat; this.minD = 1e9; this.strikeCd = 0; this.boltCd = 3;
     if (this.kind === 'sea') {
-      d.z0 = ship.z - 200 - rand() * 220; d.side = rand() < 0.5 ? -1 : 1; d.dz = (rand() - 0.5) * 4;
-      d.ph = rand() * 6; d.tDive = 12 + rand() * 4;
+      d.side = rand() < 0.5 ? -1 : 1; d.dz = (rand() - 0.5) * 4; d.ph = rand() * 6; d.tDive = 12 + rand() * 4;
+      if (this.hostile) { // aim the crossing at where the boat will be
+        const tc = 0.9 * canyonH(ship.z) / this.speed + 2;
+        d.z0 = ship.z - Math.cos(ship.heading) * ship.speed * tc; d.dz = 0; d.ph = 1.2;
+      } else d.z0 = ship.z - 200 - rand() * 220;
+      this.tau = 0; this.ramCd = 0;
     } else {
       d.dir = first ? 1 : (rand() < 0.5 ? 1 : -1);
-      d.z0 = d.dir > 0 ? ship.z - (first ? 950 : 1500 + rand() * 500) : ship.z + 450;
+      d.z0 = d.dir > 0 ? ship.z - (first ? 950 : 1300 + rand() * 500) : ship.z + 450;
       d.h = first ? 170 : 120 + rand() * 220; d.lat = 0.12 + rand() * 0.15;
       d.ph1 = rand() * 6; d.ph2 = rand() * 6; d.ph3 = rand() * 6; d.fl = rand() * 6;
+      this.hCount = 0; this.hHead = 0;
+      const steps = Math.ceil(this.L * 1.25);
+      for (let j = steps; j >= 1; j--) this.pushHist(this.path(-j / this.speed, _wA));
+      this.path(0, this.pos); this.path(0.05, _wB); this.vel.subVectors(_wB, this.pos).multiplyScalar(20);
+      this.rec.copy(this.pos);
+      this.tau = 0; this.state = 'cruise';
+      this.name = pick(['Ashwing', 'The Pale Sovereign', 'Gloomtalon', 'The Hollow King', 'Mistreaver']);
     }
-    this.tau = 0; this.active = true; this.mesh.visible = true; this.announced = false; this.surfaced = false;
+    this.active = true; this.mesh.visible = true; this.announced = false; this.surfaced = false;
   }
   path(tau, out) {
     const d = this.d;
@@ -1200,50 +1309,147 @@ class Wyrm {
     const y = d.h + 70 * Math.sin(tau * 0.06 + d.ph3) + 9 * Math.sin(tau * 0.5 + d.ph2);
     return out.set(x, y, z);
   }
-  update(dt, t) {
-    if (!this.active) {
-      this.wait -= dt;
-      if (this.wait <= 0) this.spawn(false);
-      return;
+  deactivate(wait) { this.active = false; this.mesh.visible = false; this.wait = wait; for (const s of this.spheres) s.on = false; }
+  damage(amount, point, crit) {
+    if (!this.active || this.dying) return;
+    this.hp -= amount * (crit ? 3 : 1);
+    this.u.uHit.value = Math.min(1.5, this.u.uHit.value + (crit ? 1.2 : 0.5));
+    burst(point, crit ? 26 : 8, [0.3, 1.6, 2.0], 9, 1.0, 4);
+    this.hostile = true;
+    if (this.kind !== 'sea' && this.state === 'cruise') { this.state = 'dive'; this.minD = 1e9; }
+    if (this.roarCd <= 0) { roar(0.45, this.kind === 'sea' ? 1.5 : 1.25); this.roarCd = 4; }
+    if (crit) hitMarker('crit'); else hitMarker('hit');
+    if (this.hp <= 0) this.die();
+  }
+  die() {
+    this.dying = true;
+    game.kills++; addScore(this.kind === 'sea' ? 600 : 1000);
+    burst(this.head, 80, [0.4, 1.8, 2.2], 22, 1.6, 6);
+    flash(this.head, 0x9fe8ff, 4000, 0.8);
+    roar(0.9, 0.8); boom(0.7);
+    if (this.kind === 'sea') { this.d.tDive = Math.min(this.d.tDive, this.tau); say('The serpent shudders and sinks into the black water.'); }
+    else { this.state = 'dying'; this.vel.y = Math.min(this.vel.y, -4); say(`${this.name} falls into the gorge.`); }
+  }
+  updateSpheres() {
+    const sea = this.kind === 'sea';
+    let n = 0;
+    for (let i = 0; i < SPINE_N; i += 2) {
+      const s = i / (SPINE_N - 1), p = this.spine[i], sp = this.spheres[n++];
+      sp.c.copy(p); sp.r = this.R * wyrmProfile(Math.max(s, 0.02)) * 1.25 + 1.2; sp.mul = i <= 1 ? 3 : 1;
+      sp.on = !sea || p.y > -1.5;
     }
+    if (!sea) {
+      const P = this.spine[12], T = _wA.subVectors(this.spine[13], this.spine[11]).normalize();
+      const U = _wB.set(0, 1, 0).addScaledVector(T, -T.y).normalize(), S = _wC.crossVectors(U, T);
+      const flap = this.u.uFlap.value;
+      for (const side of [-1, 1]) for (const f of [0.35, 0.65, 0.92]) {
+        const sp = this.spheres[n++]; if (!sp) break;
+        const ang = flap * (0.45 + 0.75 * f) * side, rel = side * this.span * f;
+        const x = side * this.root + rel * Math.cos(ang), y = rel * Math.sin(ang);
+        const z = this.span * 0.38 * f + this.span * 0.78 * Math.pow(1 - f, 0.7) * 0.45 - this.span * 0.1;
+        sp.c.copy(P).addScaledVector(S, x).addScaledVector(U, y).addScaledVector(T, z);
+        sp.r = this.span * (0.24 - f * 0.1); sp.mul = 0.5; sp.on = true;
+      }
+    }
+    for (; n < this.spheres.length; n++) this.spheres[n].on = false;
+  }
+  updateSky(dt, t) {
+    const boatP = _wC.copy(boat.position).add(_wD.set(0, 4, 0));
+    const dist = this.pos.distanceTo(boatP);
+    if (this.dying) {
+      this.vel.y -= 8 * dt; this.vel.multiplyScalar(1 - dt * 0.15);
+      this.pos.addScaledVector(this.vel, dt);
+      this.u.uFlap.value = 0.35 * Math.sin(t * 2.5);
+      if (!this.splashed && this.pos.y < 2) { this.splashed = true; bigSplash(this.pos, 1.6); boom(0.6); shake(0.6 * Math.max(0, 1 - dist / 500)); }
+      if (this.pos.y < -80) this.deactivate(20 + rand() * 20);
+    } else {
+      this.tau += dt;
+      if (game.combat && dist < 850) this.hostile = true;
+      if (this.hostile && this.state === 'cruise' && dist < 850) { this.state = 'dive'; this.minD = 1e9; }
+      let target, speed, turn;
+      if (this.state === 'cruise') { target = this.path(this.tau + 3, _wA); speed = 23; turn = 0.9; }
+      else if (this.state === 'dive') {
+        target = _wA.copy(boatP).add(_wB.set(-Math.sin(ship.heading), 0, -Math.cos(ship.heading)).multiplyScalar(ship.speed * 1.5));
+        speed = 36; turn = 1.35;
+        this.minD = Math.min(this.minD, dist);
+        if (dist < 20 && this.strikeCd <= 0) {
+          this.strikeCd = 5; damageHull(12, 'The wyrm rakes the deck!'); bigSplash(boat.position, 0.6); roar(0.8, 1.1); this.state = 'climb'; this.climbT = 7;
+        } else if (this.minD < 80 && dist > this.minD + 30) { this.state = 'climb'; this.climbT = 7; }
+        if (dist > 110 && dist < 440 && this.boltCd <= 0) { spitBolt(this.spine[0], boatP); this.boltCd = 1.25 + Math.random() * 0.6; }
+      } else {
+        this.climbT -= dt;
+        const hv = _wB.set(this.vel.x, 0, this.vel.z); if (hv.lengthSq() < 1) hv.set(0, 0, -1); hv.normalize();
+        target = _wA.copy(this.pos).addScaledVector(hv, 160); target.y = 240;
+        speed = 27; turn = 0.75;
+        if (this.climbT <= 0) { this.state = 'dive'; this.minD = 1e9; }
+      }
+      const desired = _wB.subVectors(target, this.pos).normalize().multiplyScalar(speed);
+      this.vel.lerp(desired, 1 - Math.exp(-dt * turn));
+      this.pos.addScaledVector(this.vel, dt);
+      if (this.pos.y < 16) { this.pos.y = 16; this.vel.y = Math.max(this.vel.y, 0); }
+      if (this.pos.y < 420) { const c = canyonC(this.pos.z), lim = canyonH(this.pos.z) - 24; this.pos.x = THREE.MathUtils.clamp(this.pos.x, c - lim, c + lim); }
+      const glide = sm01(-0.3, 0.4, Math.sin(t * 0.12 + this.d.fl));
+      if (this.state === 'dive') this.u.uFlap.value = 0.05 + 0.12 * Math.sin(t * 1.2);
+      else if (this.state === 'climb') this.u.uFlap.value = 0.1 + 0.65 * Math.sin(t * 1.5 + this.d.fl);
+      else this.u.uFlap.value = 0.08 + Math.sin(t * 0.75 + this.d.fl) * 0.5 * glide;
+      const hz = this.pos.z, d = this.d;
+      if (!this.hostile && ((d.dir > 0 && hz > ship.z + 900) || (d.dir < 0 && hz < ship.z - 2000))) { this.deactivate(15 + rand() * 35); return; }
+      if (this.hostile && dist > 2600) { this.deactivate(10 + rand() * 15); return; }
+    }
+    // record the head with a travelling wiggle so the body undulates
+    const side = _wB.crossVectors(this.vel, _wD.set(0, 1, 0)); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
+    this.rec.copy(this.pos).addScaledVector(side, 5 * Math.sin(t * 0.8)).add(_wD.set(0, 2.5 * Math.sin(t * 1.1), 0));
+    if (this.hCount === 0 || this.histAt(0, _wA).distanceTo(this.rec) > 0.8) this.pushHist(this.rec);
+    this.sampleSpine();
+  }
+  updateSea(dt, t) {
     this.tau += dt;
     const dTau = (this.L / (SPINE_N - 1)) / this.speed;
     for (let i = 0; i < SPINE_N; i++) this.path(this.tau - i * dTau, this.spine[i]);
-    this.head.copy(this.spine[0]);
-    if (this.kind !== 'sea') {
-      const d = this.d;
-      const cyc = Math.sin(t * 0.75 + d.fl);
-      const glide = sm01(-0.3, 0.4, Math.sin(t * 0.12 + d.fl));
-      this.u.uFlap.value = 0.08 + cyc * 0.5 * glide;
-      const hz = this.head.z;
-      if ((d.dir > 0 && hz > ship.z + 900) || (d.dir < 0 && hz < ship.z - 2000)) { this.active = false; this.mesh.visible = false; this.wait = 15 + rand() * 35; }
-    } else {
-      // spray where the body breaks the surface
-      for (let i = 0; i < SPINE_N - 1; i++) {
-        const a = this.spine[i], b = this.spine[i + 1];
-        if (a.y * b.y < 0 && Math.random() < dt * 30) {
-          const f = a.y / (a.y - b.y);
-          tmpV.lerpVectors(a, b, f); tmpV.y = 0.3;
-          tmpV2.set((Math.random() - 0.5) * 4, 2 + Math.random() * 4, (Math.random() - 0.5) * 4);
-          emitSpray(tmpV, tmpV2);
+    for (let i = 0; i < SPINE_N - 1; i++) {
+      const a = this.spine[i], b = this.spine[i + 1];
+      if (a.y * b.y < 0 && Math.random() < dt * 30) {
+        tmpV.lerpVectors(a, b, a.y / (a.y - b.y)); tmpV.y = 0.3;
+        tmpV2.set((Math.random() - 0.5) * 4, 2 + Math.random() * 4, (Math.random() - 0.5) * 4);
+        emitSpray(tmpV, tmpV2);
+      }
+    }
+    if (!this.surfaced && this.spine[0].y > 0) this.surfaced = true;
+    // ramming
+    this.ramCd -= dt;
+    if (!this.dying && this.ramCd <= 0) {
+      for (let i = 0; i < SPINE_N; i += 2) {
+        const p = this.spine[i];
+        if (p.y > -5 && Math.hypot(p.x - ship.x, p.z - ship.z) < 10) {
+          this.ramCd = 8; damageHull(16, 'The serpent rams the hull!'); ship.roll += 0.35 * (Math.random() < 0.5 ? -1 : 1); ship.speed *= 0.5;
+          bigSplash(boat.position, 0.8); boom(0.5); break;
         }
       }
-      if (!this.surfaced && this.head.y > 0) { this.surfaced = true; }
-      const tail = this.spine[SPINE_N - 1];
-      if (this.tau > this.d.tDive + 8 && tail.y < -12) { this.active = false; this.mesh.visible = false; this.wait = 35 + rand() * 50; }
-      if (this.head.z > ship.z + 250 && this.tau > 3) { this.active = false; this.mesh.visible = false; this.wait = 20 + rand() * 30; }
     }
-    // sightings
+    const tail = this.spine[SPINE_N - 1];
+    if (this.tau > this.d.tDive + 8 && tail.y < -12) { this.deactivate(game.combat ? 18 + rand() * 20 : 35 + rand() * 50); return; }
+    if (this.spine[0].z > ship.z + 250 && this.tau > 3) { this.deactivate(20 + rand() * 30); return; }
+  }
+  update(dt, t) {
+    if (!this.active) { this.wait -= dt; if (this.wait <= 0) this.spawn(false); return; }
+    this.strikeCd -= dt; this.boltCd -= dt; this.roarCd -= dt;
+    this.u.uHit.value = Math.max(0, this.u.uHit.value - dt * 3);
+    if (this.kind === 'sea') this.updateSea(dt, t); else this.updateSky(dt, t);
+    if (!this.active) return;
+    this.head.copy(this.spine[0]);
+    this.updateSpheres();
     const dist = camera.position.distanceTo(this.head);
     const near = this.kind === 'sea' ? (this.surfaced && dist < 650) : dist < 620;
-    if (near && !this.announced) {
+    if (near && !this.announced && !this.dying) {
       this.announced = true;
-      if (this.kind === 'sea') { say(pick(SEA_LINES)); roar(0.35, 1.4); }
-      else { say(pick(SKY_LINES)); roar(0.6 * (1 - dist / 900), 1); }
+      if (this.kind === 'sea') { say(game.combat ? 'Serpent off the bow! It is coming straight for us!' : pick(SEA_LINES)); roar(0.35, 1.4); }
+      else { say(game.combat ? `${this.name} is diving on the boat! Man the gun!` : pick(SKY_LINES)); roar(0.6 * (1 - dist / 900), 1); }
     }
   }
-  get visibleHead() { return this.active && (this.kind !== 'sea' || this.head.y > -1.5) ? this.head : null; }
+  get visibleHead() { return this.active && !this.dying && (this.kind !== 'sea' || this.head.y > -1.5) ? this.head : null; }
 }
+const _wA = new THREE.Vector3(), _wB = new THREE.Vector3(), _wC = new THREE.Vector3(), _wD = new THREE.Vector3();
+
 const SKY_LINES = [
   'Something vast is moving above the fog.',
   'Wingbeats like distant thunder. Nobody on deck speaks.',
@@ -1318,17 +1524,27 @@ for (let i = 0; i < BIRD_N; i++) {
     w: (gull ? 0.22 + Math.random() * 0.25 : 0.25 + Math.random() * 0.35) * (Math.random() < 0.5 ? -1 : 1),
     ph: Math.random() * 6.28, h: gull ? 8 + Math.random() * 16 : (Math.random() - 0.5) * 40, bob: 1 + Math.random() * 3,
     scale: gull ? 1.1 + Math.random() * 0.3 : 1.3 + Math.random() * 0.6,
+    pos: new THREE.Vector3(0, -999, 0), vel: new THREE.Vector3(), dead: false, respawn: 0,
   });
   const c = gull ? new THREE.Color(0.55, 0.57, 0.58) : new THREE.Color(0.03, 0.032, 0.035);
   birdMesh.setColorAt(i, c);
 }
 const dummy = new THREE.Object3D(), birdCtr = new THREE.Vector3(), birdDir = new THREE.Vector3();
-function updateBirds(t) {
+function updateBirds(t, dt = 0.016) {
   for (const f of flocks) {
     if (f.z > ship.z + 280) { f.z = ship.z - 800 - Math.random() * 500; f.side = Math.random() < 0.5 ? -1 : 1; f.y = 70 + Math.random() * 200; }
   }
   for (let i = 0; i < BIRD_N; i++) {
     const b = birds[i];
+    if (b.dead) {
+      if (t > b.respawn) b.dead = false;
+      else {
+        if (b.pos.y > -2) { b.vel.y -= 9.8 * dt; b.pos.addScaledVector(b.vel, dt); }
+        dummy.position.copy(b.pos); dummy.rotation.set(t * 7, t * 3, t * 5);
+        dummy.scale.setScalar(b.pos.y > -2 ? b.scale : 0); dummy.updateMatrix(); birdMesh.setMatrixAt(i, dummy.matrix);
+        continue;
+      }
+    }
     if (b.gull) birdCtr.set(ship.x, ship.y, ship.z + 4);
     else { const f = flocks[b.flock]; birdCtr.set(canyonC(f.z) + f.side * (canyonH(f.z) - 30), f.y, f.z); }
     const th = b.w * t + b.ph + 0.3 * Math.sin(t * 0.2 + b.ph);
@@ -1339,6 +1555,7 @@ function updateBirds(t) {
     dummy.lookAt(tmpV.copy(dummy.position).sub(birdDir));
     dummy.rotateZ(-sg * 0.35);
     dummy.scale.setScalar(b.scale);
+    b.pos.copy(dummy.position);
     dummy.updateMatrix();
     birdMesh.setMatrixAt(i, dummy.matrix);
   }
@@ -1373,7 +1590,7 @@ function makePerson(jacketHex) {
 const NODES = {
   A0: [0, 5.4], A1: [-1.8, 6.6], A2: [1.6, 6.2], A3: [0, 8.5],
   P0: [-2.55, 3.3], P1: [-2.55, -1.6], S0: [2.55, 3.3], S1: [2.55, -1.6],
-  F0: [0, -4.1], F1: [0, -7.2], F2: [-1.3, -5.6], F3: [1.3, -5.6],
+  F0: [0, -4.1], F1: [-1.0, -8.0], F2: [-1.3, -5.6], F3: [1.3, -5.6],
 };
 const EDGES = [['A0', 'A1'], ['A0', 'A2'], ['A0', 'A3'], ['A1', 'A3'], ['A2', 'A3'], ['A0', 'P0'], ['A0', 'S0'], ['A1', 'P0'], ['A2', 'S0'],
   ['P0', 'P1'], ['S0', 'S1'], ['P1', 'F0'], ['S1', 'F0'], ['P1', 'F2'], ['S1', 'F3'], ['F0', 'F1'], ['F0', 'F2'], ['F0', 'F3'], ['F2', 'F1'], ['F3', 'F1']];
@@ -1396,10 +1613,20 @@ function updateCrew(dt, t, threat) {
   if (threat) threatLocal = boatBody.worldToLocal(tmpV2.copy(threat));
   for (const c of crew) {
     const p = c.p;
+    if (c.state === 'gunner') {
+      const ty = turret.yaw;
+      c.x = Math.sin(ty) * 0.95; c.z = turret.base.position.z + Math.cos(ty) * 0.95; c.yaw = ty;
+      p.armL.rotation.x = -1.35 - turret.pitch * 0.5; p.armR.rotation.x = -1.35 - turret.pitch * 0.5;
+      p.armL.rotation.z = -0.25; p.armR.rotation.z = 0.25;
+      p.hips.rotation.x = 0.25; p.hips.position.y = 0.86; p.legL.rotation.x = 0.35; p.legR.rotation.x = -0.25;
+      p.headPivot.rotation.set(-turret.pitch * 0.6, 0, 0);
+      p.root.position.set(c.x, deckAt(c.z) + 0.02, c.z); p.root.rotation.set(0, c.yaw, 0);
+      continue;
+    }
     if (c.state === 'walk') {
       const [tx, tz] = NODES[c.next];
       const dx = tx - c.x, dz = tz - c.z, d = Math.hypot(dx, dz);
-      const step = c.speed * dt;
+      const step = c.speed * (game.combat ? 2 : 1) * dt;
       if (d <= step) { c.x = tx; c.z = tz; c.node = c.next; c.state = 'work'; c.task = TASKS[c.node]; c.timer = c.task === 'idle' ? 1 + Math.random() * 2 : 4 + Math.random() * 7; }
       else { c.x += dx / d * step; c.z += dz / d * step; }
       const want = Math.atan2(-dx, -dz);
@@ -1483,7 +1710,7 @@ const lamp = (() => {
       vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix*mv; }`,
     fragmentShader: `uniform float uOn; varying float vAlong; varying vec3 vN; varying vec3 vV;
       void main(){ float rim = pow(abs(dot(normalize(vN), normalize(vV))), 1.6);
-        float a = pow(1.0 - vAlong, 2.2) * smoothstep(0.0, 0.03, vAlong) * rim * 0.16 * uOn;
+        float a = pow(max(0.0, 1.0 - vAlong), 2.2) * smoothstep(0.0, 0.03, vAlong) * rim * 0.16 * uOn;
         gl_FragColor = vec4(vec3(0.78,0.84,0.92) * a, a); }`
   });
   const beam = new THREE.Mesh(beamGeo, beamMat);
@@ -1571,11 +1798,525 @@ function gullCry(t) {
 }
 
 /* ============================================================
+   SEA BATTLE — bow autocannon, harpoon gun, plasma bolts, hull damage
+   ============================================================ */
+const game = { combat: false, hull: 100, score: 0, kills: 0, birds: 0, over: false, heat: 0, overheat: false, harpoonCd: 0, firing: false, fireCd: 0, shake: 0, lastHit: -99 };
+const $ = id => document.getElementById(id);
+
+/* ---------- sparks (additive) & smoke (alpha) particle pools ---------- */
+function makePool(n, opts) {
+  const g = new THREE.BufferGeometry();
+  const pos = new Float32Array(n * 3).fill(-9999), col = new Float32Array(n * 3);
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const pts = new THREE.Points(g, nearFade(new THREE.PointsMaterial(Object.assign({ map: dotTex, vertexColors: true, transparent: true, depthWrite: false, fog: true }, opts))));
+  pts.frustumCulled = false; scene.add(pts);
+  return { g, pts, pos, col, vel: new Float32Array(n * 3), life: new Float32Array(n), max: new Float32Array(n), base: new Float32Array(n * 3), grav: new Float32Array(n), n, head: 0 };
+}
+const sparks = makePool(1400, { size: 0.9, blending: THREE.AdditiveBlending });
+const smoke = makePool(260, { size: 5, opacity: 0.5 });
+function emitP(pool, p, v, c, life, g) {
+  const i = pool.head; pool.head = (pool.head + 1) % pool.n;
+  pool.pos[i * 3] = p.x; pool.pos[i * 3 + 1] = p.y; pool.pos[i * 3 + 2] = p.z;
+  pool.vel[i * 3] = v.x; pool.vel[i * 3 + 1] = v.y; pool.vel[i * 3 + 2] = v.z;
+  pool.base[i * 3] = c[0]; pool.base[i * 3 + 1] = c[1]; pool.base[i * 3 + 2] = c[2];
+  pool.life[i] = pool.max[i] = life; pool.grav[i] = g;
+}
+const _pv = new THREE.Vector3();
+function burst(p, n, color, speed, life, grav) {
+  for (let i = 0; i < n; i++) {
+    _pv.set(Math.random() - 0.5, Math.random() - 0.3, Math.random() - 0.5).normalize().multiplyScalar(speed * (0.3 + Math.random()));
+    emitP(sparks, p, _pv, color, life * (0.5 + Math.random() * 0.7), grav);
+  }
+}
+function bigSplash(p, scale = 1) {
+  for (let i = 0; i < 160 * scale; i++) {
+    tmpV.set(p.x + (Math.random() - 0.5) * 14 * scale, 0.3, p.z + (Math.random() - 0.5) * 14 * scale);
+    tmpV2.set((Math.random() - 0.5) * 8, 6 + Math.random() * 16 * scale, (Math.random() - 0.5) * 8);
+    emitSpray(tmpV, tmpV2);
+  }
+}
+function updatePool(pool, dt, fade) {
+  const { pos, vel, life, max, base, col, grav } = pool;
+  for (let i = 0; i < pool.n; i++) {
+    if (life[i] <= 0) continue;
+    life[i] -= dt;
+    if (life[i] <= 0) { pos[i * 3 + 1] = -9999; continue; }
+    vel[i * 3 + 1] -= grav[i] * dt;
+    const drag = 1 - dt * 0.8;
+    vel[i * 3] *= drag; vel[i * 3 + 2] *= drag;
+    pos[i * 3] += vel[i * 3] * dt; pos[i * 3 + 1] += vel[i * 3 + 1] * dt; pos[i * 3 + 2] += vel[i * 3 + 2] * dt;
+    const k = fade ? life[i] / max[i] : 1;
+    col[i * 3] = base[i * 3] * k; col[i * 3 + 1] = base[i * 3 + 1] * k; col[i * 3 + 2] = base[i * 3 + 2] * k;
+  }
+  pool.g.attributes.position.needsUpdate = true; pool.g.attributes.color.needsUpdate = true;
+}
+
+/* ---------- flash lights (fixed pool, so shaders never recompile) ---------- */
+const flashes = [0, 1, 2].map(() => { const l = new THREE.PointLight(0xffffff, 0, 0, 2); scene.add(l); return { l, t: 0, dur: 1, peak: 0 }; });
+let flashHead = 0;
+function flash(p, color, intensity, dur) {
+  const f = flashes[flashHead]; flashHead = (flashHead + 1) % flashes.length;
+  f.l.position.copy(p); f.l.color.set(color); f.peak = intensity; f.dur = dur; f.t = dur;
+}
+function updateFlashes(dt) { for (const f of flashes) { f.t = Math.max(0, f.t - dt); f.l.intensity = f.peak * Math.pow(f.t / f.dur, 2); } }
+
+/* ---------- bow gun turret ---------- */
+const turret = (() => {
+  const z = -7.0, y = deckAt(z);
+  const metal = new THREE.MeshStandardMaterial({ color: 0x23262a, metalness: 0.75, roughness: 0.38 });
+  const rust = new THREE.MeshStandardMaterial({ color: 0x4a2a1c, roughness: 0.7, metalness: 0.4 });
+  const base = new THREE.Group(); base.position.set(0, y, z); boatBody.add(base);
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 0.8, 12), rust); ped.position.y = 0.4; base.add(ped);
+  const yawG = new THREE.Group(); yawG.position.y = 0.85; base.add(yawG);
+  const shield = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.9, 0.08), metal); shield.position.set(0, 0.3, -0.45); shield.rotation.x = -0.15; yawG.add(shield);
+  const pitchG = new THREE.Group(); pitchG.position.y = 0.25; yawG.add(pitchG);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.38, 0.9), metal); pitchG.add(body);
+  for (const sx of [-0.15, 0.15]) {
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 2.2, 8), metal); b.rotation.x = Math.PI / 2; b.position.set(sx, 0.05, -1.4); pitchG.add(b);
+  }
+  // harpoon tube on top
+  const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 1.8, 10), rust); tube.rotation.x = Math.PI / 2; tube.position.set(0, 0.34, -1.0); pitchG.add(tube);
+  const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0.05, -2.6); pitchG.add(muzzle);
+  const hMuzzle = new THREE.Object3D(); hMuzzle.position.set(0, 0.34, -2.0); pitchG.add(hMuzzle);
+  const fl = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, color: new THREE.Color(9, 6, 2.5), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  fl.scale.setScalar(1.6); fl.visible = false; muzzle.add(fl);
+  return { base, yawG, pitchG, muzzle, hMuzzle, fl, yaw: 0, pitch: 0.1, flT: 0 };
+})();
+
+/* ---------- tracers (instanced) ---------- */
+const TR_N = 140;
+const tracerMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.1, 0.1, 5), new THREE.MeshBasicMaterial({ color: new THREE.Color(10, 5.5, 1.8), fog: false }), TR_N);
+tracerMesh.frustumCulled = false; scene.add(tracerMesh);
+const tracers = Array.from({ length: TR_N }, () => ({ on: false, p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0 }));
+let trHead = 0;
+const zeroM = new THREE.Matrix4().makeScale(0, 0, 0);
+for (let i = 0; i < TR_N; i++) tracerMesh.setMatrixAt(i, zeroM);
+
+/* ---------- harpoons ---------- */
+const harpoons = Array.from({ length: 4 }, () => {
+  const g = new THREE.Group();
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.4, 6), new THREE.MeshStandardMaterial({ color: 0x2a2c2e, metalness: 0.8, roughness: 0.3 }));
+  shaft.rotation.x = Math.PI / 2; g.add(shaft);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.6, 6), new THREE.MeshStandardMaterial({ color: 0x5a3a20, metalness: 0.7, roughness: 0.4 }));
+  tip.rotation.x = -Math.PI / 2; tip.position.z = -1.45; g.add(tip);
+  const fl = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), new THREE.MeshBasicMaterial({ color: new THREE.Color(12, 3, 1) })); fl.position.z = 1.3; g.add(fl);
+  g.visible = false; scene.add(g);
+  return { g, on: false, p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0 };
+});
+
+/* ---------- plasma bolts spat by wyrms ---------- */
+const bolts = Array.from({ length: 14 }, () => {
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1.2, 12, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 6, 8), fog: true }));
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: dotTex, color: new THREE.Color(0.8, 3, 4), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  halo.scale.setScalar(7); m.add(halo);
+  m.visible = false; scene.add(m);
+  return { m, on: false, p: new THREE.Vector3(), v: new THREE.Vector3(), life: 0 };
+});
+function spitBolt(from, to) {
+  const b = bolts.find(b => !b.on); if (!b) return;
+  b.on = true; b.life = 9; b.p.copy(from); b.m.visible = true;
+  const tt = from.distanceTo(to) / 75;
+  tmpV.copy(to).add(tmpV2.set(-Math.sin(ship.heading), 0, -Math.cos(ship.heading)).multiplyScalar(ship.speed * tt));
+  tmpV.x += (Math.random() - 0.5) * 8; tmpV.z += (Math.random() - 0.5) * 8;
+  b.v.subVectors(tmpV, from).normalize().multiplyScalar(75);
+  flash(from, 0x7fdcff, 1500, 0.4);
+  hiss();
+}
+
+/* ---------- hit tests ---------- */
+const _seg = new THREE.Vector3(), _cp = new THREE.Vector3();
+function segSphere(a, b, c, r) {
+  _seg.subVectors(b, a); const l2 = _seg.lengthSq();
+  const t = l2 > 0 ? THREE.MathUtils.clamp(_cp.subVectors(c, a).dot(_seg) / l2, 0, 1) : 0;
+  _cp.copy(a).addScaledVector(_seg, t);
+  return _cp.distanceToSquared(c) < r * r ? t : -1;
+}
+const hitInfo = { kind: '', obj: null, mul: 1, t: 2, point: new THREE.Vector3() };
+function testHits(a, b, birdsToo) {
+  hitInfo.t = 2; hitInfo.obj = null;
+  for (const w of wyrms) {
+    if (!w.active || w.dying) continue;
+    if (w.head.distanceTo(a) > w.L + 120) continue;
+    for (const s of w.spheres) {
+      if (!s.on) continue;
+      const t = segSphere(a, b, s.c, s.r);
+      if (t >= 0 && t < hitInfo.t) { hitInfo.t = t; hitInfo.kind = 'wyrm'; hitInfo.obj = w; hitInfo.mul = s.mul; }
+    }
+  }
+  for (const bo of bolts) {
+    if (!bo.on) continue;
+    const t = segSphere(a, b, bo.p, 3);
+    if (t >= 0 && t < hitInfo.t) { hitInfo.t = t; hitInfo.kind = 'bolt'; hitInfo.obj = bo; }
+  }
+  if (birdsToo) for (const bd of birds) {
+    if (bd.dead) continue;
+    const t = segSphere(a, b, bd.pos, 1.6 * bd.scale);
+    if (t >= 0 && t < hitInfo.t) { hitInfo.t = t; hitInfo.kind = 'bird'; hitInfo.obj = bd; }
+  }
+  if (hitInfo.obj) hitInfo.point.lerpVectors(a, b, hitInfo.t);
+  return hitInfo.obj;
+}
+function hitsWorld(p) {
+  if (p.y < 0.2) return 'water';
+  if (p.y < 500) {
+    const c = canyonC(p.z), hw = canyonH(p.z);
+    if (Math.abs(p.x - c) > hw - 25) {
+      const side = p.x > c ? 1 : -1;
+      if ((p.x - wallX(p.z, Math.max(0, p.y), side, false)) * side > 0) return 'rock';
+    }
+  }
+  return null;
+}
+function killBird(bd, p) {
+  bd.dead = true; bd.vel.set((Math.random() - 0.5) * 4, 3, (Math.random() - 0.5) * 4); bd.respawn = clock.elapsedTime + 10 + Math.random() * 10;
+  burst(p, 14, bd.gull ? [1.4, 1.4, 1.4] : [0.5, 0.5, 0.55], 4, 1.4, 3);
+  game.birds++; addScore(bd.gull ? 10 : 25); hitMarker('hit');
+}
+function resolveHit(p, dmg, isHarpoon) {
+  const o = hitInfo.obj;
+  if (hitInfo.kind === 'wyrm') {
+    o.damage(dmg * hitInfo.mul, p, hitInfo.mul > 1.5);
+    if (isHarpoon) { burst(p, 60, [6, 3, 1], 16, 1.1, 5); flash(p, 0xffa060, 6000, 0.6); boom(0.6); }
+    else burst(p, 4, [6, 3.5, 1.2], 8, 0.4, 2);
+  } else if (hitInfo.kind === 'bolt') {
+    o.on = false; o.m.visible = false; burst(p, 30, [0.6, 2.6, 3.2], 12, 0.8, 1); flash(p, 0x7fdcff, 2500, 0.4); addScore(50); hitMarker('hit');
+  } else if (hitInfo.kind === 'bird') killBird(o, p);
+}
+
+/* ---------- firing ---------- */
+const aimPoint = new THREE.Vector3(), aimDir = new THREE.Vector3(), muzzleW = new THREE.Vector3();
+function fireCannon() {
+  const tr = tracers[trHead]; trHead = (trHead + 1) % TR_N;
+  turret.muzzle.getWorldPosition(muzzleW);
+  tr.on = true; tr.life = 1.6; tr.p.copy(muzzleW);
+  tr.v.subVectors(aimPoint, muzzleW).normalize();
+  tr.v.x += (Math.random() - 0.5) * 0.012; tr.v.y += (Math.random() - 0.5) * 0.012; tr.v.z += (Math.random() - 0.5) * 0.012;
+  tr.v.normalize().multiplyScalar(380);
+  // ship's own motion
+  tr.v.x += -Math.sin(ship.heading) * ship.speed; tr.v.z += -Math.cos(ship.heading) * ship.speed;
+  turret.flT = 0.05; flash(muzzleW, 0xffb060, 140, 0.08);
+  emitP(smoke, muzzleW, tmpV.set((Math.random() - 0.5), 1.5, (Math.random() - 0.5)), [0.32, 0.33, 0.34], 1.4, -0.5);
+  gunshot();
+  game.heat += 3.4; if (game.heat >= 100) { game.heat = 100; game.overheat = true; say('Barrels overheated. Let them cool.'); }
+}
+function fireHarpoon() {
+  if (game.harpoonCd > 0 || game.over) return;
+  const h = harpoons.find(h => !h.on); if (!h) return;
+  turret.hMuzzle.getWorldPosition(muzzleW);
+  h.on = true; h.life = 5; h.p.copy(muzzleW); h.g.visible = true;
+  h.v.subVectors(aimPoint, muzzleW).normalize().multiplyScalar(175);
+  game.harpoonCd = 2.6;
+  flash(muzzleW, 0xffa050, 600, 0.2);
+  for (let i = 0; i < 10; i++) emitP(smoke, muzzleW, tmpV.set((Math.random() - 0.5) * 3, 1 + Math.random() * 2, (Math.random() - 0.5) * 3), [0.3, 0.31, 0.32], 2, -0.4);
+  harpoonShot();
+}
+
+function updateProjectiles(dt) {
+  const a = new THREE.Vector3();
+  for (let i = 0; i < TR_N; i++) {
+    const tr = tracers[i];
+    if (!tr.on) continue;
+    a.copy(tr.p);
+    tr.v.y -= 9.8 * dt * 0.5;
+    tr.p.addScaledVector(tr.v, dt);
+    tr.life -= dt;
+    if (testHits(a, tr.p, true)) { resolveHit(hitInfo.point, 2.6, false); tr.on = false; }
+    else {
+      const w = hitsWorld(tr.p);
+      if (w === 'water') { tmpV.copy(tr.p); tmpV.y = 0.3; for (let k = 0; k < 4; k++) emitSpray(tmpV, tmpV2.set((Math.random() - 0.5) * 2, 3 + Math.random() * 4, (Math.random() - 0.5) * 2)); tr.on = false; }
+      else if (w === 'rock') { burst(tr.p, 6, [3, 2, 1], 6, 0.5, 6); tr.on = false; }
+      else if (tr.life <= 0) tr.on = false;
+    }
+    if (tr.on) { dummy.position.copy(tr.p); dummy.lookAt(tmpV.copy(tr.p).add(tr.v)); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); tracerMesh.setMatrixAt(i, dummy.matrix); }
+    else tracerMesh.setMatrixAt(i, zeroM);
+  }
+  tracerMesh.instanceMatrix.needsUpdate = true;
+
+  for (const h of harpoons) {
+    if (!h.on) continue;
+    a.copy(h.p);
+    h.v.y -= 9.8 * dt * 0.35;
+    h.p.addScaledVector(h.v, dt);
+    h.life -= dt;
+    h.g.position.copy(h.p); h.g.lookAt(tmpV.copy(h.p).sub(h.v));
+    emitP(sparks, h.p, tmpV.set((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2), [4, 1.6, 0.6], 0.5, 0);
+    let done = false;
+    if (testHits(a, h.p, true)) { resolveHit(hitInfo.point, 24, true); done = true; }
+    else {
+      const w = hitsWorld(h.p);
+      if (w === 'water') { bigSplash(h.p, 0.25); done = true; }
+      else if (w === 'rock') { burst(h.p, 40, [6, 3, 1], 12, 0.9, 6); flash(h.p, 0xffa060, 3000, 0.5); boom(0.4); done = true; }
+      else if (h.life <= 0) done = true;
+    }
+    if (done) { h.on = false; h.g.visible = false; }
+  }
+
+  for (const b of bolts) {
+    if (!b.on) continue;
+    b.p.addScaledVector(b.v, dt); b.life -= dt;
+    b.m.position.copy(b.p);
+    b.m.scale.setScalar(0.85 + 0.25 * Math.sin(clock.elapsedTime * 30));
+    if (Math.random() < 0.6) emitP(sparks, b.p, tmpV.set((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3), [0.4, 1.6, 2.0], 0.7, 0);
+    const boatC = tmpV2.copy(boat.position); boatC.y += 3;
+    if (b.p.distanceTo(boatC) < 8) {
+      damageHull(5, 'Plasma strikes the wheelhouse!'); burst(b.p, 50, [0.6, 2.6, 3.4], 14, 1, 3); flash(b.p, 0x7fdcff, 4000, 0.6); boom(0.5);
+      b.on = false; b.m.visible = false;
+    } else if (b.p.y < 0.3) {
+      bigSplash(b.p, 0.3); burst(b.p, 20, [0.4, 1.8, 2.4], 8, 0.8, 4); b.on = false; b.m.visible = false;
+    } else if (b.life <= 0) { b.on = false; b.m.visible = false; }
+  }
+}
+
+/* ---------- hull ---------- */
+function damageHull(n, msg) {
+  if (game.over) return;
+  game.hull = Math.max(0, game.hull - n); game.lastHit = clock.elapsedTime;
+  shake(0.9); crunch();
+  $('dmg').classList.remove('on'); void $('dmg').offsetWidth; $('dmg').classList.add('on');
+  if (msg) say(msg);
+  if (game.hull <= 0) gameOver();
+}
+function shake(a) { game.shake = Math.min(1.5, game.shake + a); }
+function addScore(n) { game.score += n; }
+function gameOver() {
+  game.over = true; ship.throttle = 0; game.firing = false;
+  $('over-score').textContent = game.score.toLocaleString();
+  $('over-stats').textContent = `${game.kills} monsters slain · ${game.birds} birds downed · ${(ship.travelled / 1852).toFixed(2)} nm sailed`;
+  setTimeout(() => $('over').hidden = false, 2200);
+  boom(0.9);
+}
+function restart() {
+  game.hull = 100; game.score = 0; game.kills = 0; game.birds = 0; game.over = false; game.heat = 0; game.overheat = false; ship.sink = 0;
+  ship.throttle = 0.38;
+  for (const w of wyrms) w.deactivate(8 + Math.random() * 20);
+  for (const b of bolts) { b.on = false; b.m.visible = false; }
+  $('over').hidden = true;
+  say('The Kestrel limps on. Hold the channel.');
+}
+
+/* ---------- combat mode, aiming ---------- */
+const aim = { nx: 0, ny: 0.15, yaw: 0, pitch: 0.08, touch: false };
+function setCombat(on) {
+  game.combat = on;
+  document.body.classList.toggle('combat', on);
+  $('mode').textContent = on ? 'Battle stations' : CAMS[camMode].name;
+  $('battle').textContent = on ? 'Stand down (F)' : 'Battle stations (F)';
+  if (on) {
+    aim.yaw = ship.heading; aim.pitch = 0.08;
+    say('Battle stations! Gunner to the bow.');
+    for (const w of wyrms) if (w.active && !w.dying && w.head.distanceTo(boat.position) < 850) { w.hostile = true; if (w.kind !== 'sea') { w.state = 'dive'; w.minD = 1e9; } }
+    const g = crew[2]; g.state = 'gunner';
+  } else {
+    game.firing = false;
+    const g = crew[2]; g.state = 'work'; g.node = 'F0'; g.x = NODES.F0[0]; g.z = NODES.F0[1]; g.task = 'idle'; g.timer = 1;
+  }
+}
+const ray = new THREE.Vector3();
+function computeAim() {
+  ray.set(aim.nx, aim.ny, 0.5).unproject(camera).sub(camera.position).normalize();
+  aimDir.copy(ray);
+  // nearest target along the ray decides the convergence distance
+  const far = tmpV.copy(camera.position).addScaledVector(ray, 900);
+  let t = 380;
+  if (testHits(camera.position, far, true)) t = hitInfo.t * 900;
+  aimPoint.copy(camera.position).addScaledVector(ray, Math.max(25, t));
+}
+function updateCombatCamera(dt, t) {
+  // edge panning with the mouse, drag on touch
+  if (!aim.touch) {
+    const ex = Math.abs(aim.nx) > 0.62 ? (aim.nx - Math.sign(aim.nx) * 0.62) : 0;
+    const ey = Math.abs(aim.ny - 0.1) > 0.55 ? (aim.ny - 0.1 - Math.sign(aim.ny - 0.1) * 0.55) : 0;
+    aim.yaw -= ex * dt * 3.2; aim.pitch = THREE.MathUtils.clamp(aim.pitch + ey * dt * 1.6, -0.25, 1.1);
+  }
+  if (keys.has('KeyQ')) aim.yaw += dt * 1.4;
+  if (keys.has('KeyE')) aim.yaw -= dt * 1.4;
+  turret.base.getWorldPosition(muzzleW);
+  const dist = 1.5, ch = 2.5, side = 0.85;
+  const cp = Math.cos(aim.pitch * 0.6), sy = Math.sin(aim.yaw), cy = Math.cos(aim.yaw);
+  camTarget.set(muzzleW.x + sy * dist * cp + cy * side, muzzleW.y + ch - Math.sin(aim.pitch * 0.6) * 1.5, muzzleW.z + cy * dist * cp - sy * side);
+  camera.position.lerp(camTarget, 1 - Math.exp(-dt * 6));
+  keepCameraInGorge(t);
+  camLook.set(camera.position.x - Math.sin(aim.yaw) * 100 * Math.cos(aim.pitch), camera.position.y + Math.sin(aim.pitch) * 100, camera.position.z - Math.cos(aim.yaw) * 100 * Math.cos(aim.pitch));
+  camLookSm.lerp(camLook, 1 - Math.exp(-dt * 10));
+  camera.lookAt(camLookSm);
+}
+function keepCameraInGorge(t) {
+  const minY = waveHeight(camera.position.x, camera.position.z, t * WAVE_T) + 1.2;
+  if (camera.position.y < minY) camera.position.y = minY;
+  const cz = camera.position.z, cy = Math.max(0, camera.position.y);
+  let lo = -Infinity, hi = Infinity;
+  for (const dh of [-4, 0, 4]) {
+    const h = Math.max(0, cy + dh);
+    lo = Math.max(lo, wallX(cz, h, -1, true) + 4);
+    hi = Math.min(hi, wallX(cz, h, 1, true) - 4);
+  }
+  if (lo < hi) camera.position.x = THREE.MathUtils.clamp(camera.position.x, lo, hi);
+  else camera.position.x = canyonC(cz);
+  for (const o of obstacles) {
+    const dx = camera.position.x - o.x, dz = camera.position.z - o.z, d = Math.hypot(dx, dz), m = o.r * 1.35 + 4;
+    if (d < m && d > 1e-3) { camera.position.x = o.x + dx / d * m; camera.position.z = o.z + dz / d * m; }
+  }
+}
+function applyShake(dt) {
+  if (game.shake > 0.001) {
+    const s = game.shake * 0.5;
+    camera.position.x += (Math.random() - 0.5) * s; camera.position.y += (Math.random() - 0.5) * s;
+    camera.rotation.z += (Math.random() - 0.5) * s * 0.04;
+    game.shake *= Math.exp(-dt * 4);
+  }
+}
+
+function updateTurret(dt) {
+  const target = game.combat ? aimPoint : tmpV.copy(boat.position).add(tmpV2.set(-Math.sin(ship.heading) * 100, 4, -Math.cos(ship.heading) * 100));
+  const l = turret.base.worldToLocal(tmpV2.copy(target));
+  const wy = Math.atan2(-l.x, -l.z), wp = Math.atan2(l.y - 1.1, Math.hypot(l.x, l.z));
+  const k = Math.min(1, dt * 9);
+  turret.yaw += Math.atan2(Math.sin(wy - turret.yaw), Math.cos(wy - turret.yaw)) * k;
+  turret.pitch += (THREE.MathUtils.clamp(wp, -0.2, 1.3) - turret.pitch) * k;
+  turret.yawG.rotation.y = turret.yaw; turret.pitchG.rotation.x = turret.pitch;
+  turret.flT -= dt; turret.fl.visible = turret.flT > 0; turret.fl.material.rotation = Math.random() * 6;
+}
+
+function updateBattle(dt, t) {
+  game.harpoonCd = Math.max(0, game.harpoonCd - dt);
+  game.fireCd -= dt;
+  if (game.combat && !game.over) {
+    computeAim();
+    if (game.firing && !game.overheat && game.fireCd <= 0) { fireCannon(); game.fireCd = 0.085; }
+  }
+  if (!game.firing || game.overheat) game.heat = Math.max(0, game.heat - dt * (game.overheat ? 30 : 24));
+  if (game.overheat && game.heat <= 25) game.overheat = false;
+  updateTurret(dt);
+  updateProjectiles(dt);
+  updatePool(sparks, dt, true);
+  updatePool(smoke, dt, false);
+  updateFlashes(dt);
+  // damage effects: smoke, then fire
+  if (game.hull < 60 && Math.random() < dt * (60 - game.hull) * 0.35) {
+    boat.localToWorld(tmpV.set((Math.random() - 0.5) * 3, 3, 1 + Math.random() * 3));
+    emitP(smoke, tmpV, tmpV2.set((Math.random() - 0.5), 3 + Math.random() * 2, (Math.random() - 0.5)), [0.06, 0.065, 0.07], 4, -0.6);
+  }
+  if (game.hull < 30 && Math.random() < dt * 30) {
+    boat.localToWorld(tmpV.set((Math.random() - 0.5) * 2, 2.6, 2 + Math.random() * 2));
+    emitP(sparks, tmpV, tmpV2.set((Math.random() - 0.5) * 2, 2 + Math.random() * 3, (Math.random() - 0.5) * 2), [5, 1.8, 0.5], 0.8, -1);
+  }
+  // slow repairs when nothing is attacking
+  if (!game.over && t - game.lastHit > 20) game.hull = Math.min(100, game.hull + dt * 0.6);
+  if (game.over) ship.sink = Math.min(9, (ship.sink || 0) + dt * 0.35);
+}
+
+/* ---------- battle HUD ---------- */
+const hitEl = $('hitmark');
+let hitT = 0;
+function hitMarker(kind) {
+  hitEl.className = kind; hitT = 0.15;
+}
+function updateBattleHUD(dt) {
+  $('hull-fill').style.width = game.hull + '%';
+  $('hull-fill').style.background = game.hull > 50 ? 'var(--mist)' : game.hull > 25 ? 'var(--lamp)' : 'var(--danger)';
+  $('hull-val').textContent = Math.ceil(game.hull) + '%';
+  $('score').textContent = game.score.toLocaleString();
+  $('kills').textContent = game.kills; $('birdsdown').textContent = game.birds;
+  $('heat-fill').style.width = game.heat + '%';
+  $('heat-fill').style.background = game.overheat ? 'var(--danger)' : 'var(--brass)';
+  $('harp').textContent = game.harpoonCd > 0 ? `Harpoon ${game.harpoonCd.toFixed(1)}s` : 'Harpoon ready';
+  $('harp').classList.toggle('ready', game.harpoonCd <= 0);
+  const ch = $('cross');
+  ch.style.left = ((aim.nx * 0.5 + 0.5) * innerWidth) + 'px'; ch.style.top = ((-aim.ny * 0.5 + 0.5) * innerHeight) + 'px';
+  hitT -= dt; if (hitT <= 0) hitEl.className = '';
+  hitEl.style.left = ch.style.left; hitEl.style.top = ch.style.top;
+  // boss bar for the nearest engaged monster
+  let boss = null, bd = 1100;
+  for (const w of wyrms) { if (!w.active || w.dying) continue; const d = w.head.distanceTo(boat.position); if ((w.hostile || d < 700) && d < bd && (w.kind !== 'sea' || w.surfaced)) { bd = d; boss = w; } }
+  $('boss').hidden = !boss;
+  if (boss) { $('boss-name').textContent = boss.name; $('boss-fill').style.width = Math.max(0, boss.hp / boss.maxHp * 100) + '%'; }
+}
+
+/* ---------- battle sounds ---------- */
+function gunshot() {
+  if (!audio) return;
+  const { ac, master } = audio, t = ac.currentTime;
+  const n = ac.createBufferSource(); n.buffer = audio.white; n.playbackRate.value = 0.8 + Math.random() * 0.3;
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(3200, t); lp.frequency.exponentialRampToValueAtTime(300, t + 0.12);
+  const g = ac.createGain(); g.gain.setValueAtTime(0.32, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  n.connect(lp).connect(g).connect(master); n.start(t, Math.random() * 2, 0.2);
+  const o = ac.createOscillator(); o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.1);
+  const og = ac.createGain(); og.gain.setValueAtTime(0.35, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+  o.connect(og).connect(master); o.start(t); o.stop(t + 0.14);
+}
+function harpoonShot() {
+  if (!audio) return;
+  const { ac, master } = audio, t = ac.currentTime;
+  const n = ac.createBufferSource(); n.buffer = audio.white;
+  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.8; bp.frequency.setValueAtTime(2400, t); bp.frequency.exponentialRampToValueAtTime(300, t + 0.7);
+  const g = ac.createGain(); g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+  n.connect(bp).connect(g).connect(master); n.start(t, Math.random(), 0.9);
+  const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(30, t + 0.3);
+  const og = ac.createGain(); og.gain.setValueAtTime(0.6, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+  o.connect(og).connect(master); o.start(t); o.stop(t + 0.4);
+}
+function boom(vol) {
+  if (!audio) return;
+  const { ac, master } = audio, t = ac.currentTime;
+  const n = ac.createBufferSource(); n.buffer = audio.white; n.playbackRate.value = 0.35;
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.setValueAtTime(1200, t); lp.frequency.exponentialRampToValueAtTime(80, t + 1.8);
+  const g = ac.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 2.2);
+  n.connect(lp).connect(g).connect(master); n.start(t, Math.random(), 2.4);
+  const dl = ac.createDelay(2); dl.delayTime.value = 0.7; const fb = ac.createGain(); fb.gain.value = 0.35;
+  g.connect(dl); dl.connect(fb).connect(dl); fb.connect(master);
+}
+function crunch() {
+  if (!audio) return;
+  const { ac, master } = audio, t = ac.currentTime;
+  const n = ac.createBufferSource(); n.buffer = audio.white; n.playbackRate.value = 0.5;
+  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 420; bp.Q.value = 3;
+  const g = ac.createGain(); g.gain.setValueAtTime(0.7, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+  n.connect(bp).connect(g).connect(master); n.start(t, Math.random(), 1);
+  const o = ac.createOscillator(); o.type = 'square'; o.frequency.setValueAtTime(70, t); o.frequency.linearRampToValueAtTime(52, t + 0.6);
+  const og = ac.createGain(); og.gain.setValueAtTime(0.12, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400;
+  o.connect(lp).connect(og).connect(master); o.start(t); o.stop(t + 0.75);
+}
+function hiss() {
+  if (!audio) return;
+  const { ac, master } = audio, t = ac.currentTime;
+  const n = ac.createBufferSource(); n.buffer = audio.white;
+  const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1800;
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0, t); g.gain.linearRampToValueAtTime(0.12, t + 0.1); g.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
+  n.connect(hp).connect(g).connect(master); n.start(t, Math.random(), 1.2);
+}
+
+/* ---------- battle input ---------- */
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('pointermove', e => {
+  if (!game.combat || e.pointerType === 'touch') return;
+  aim.touch = false;
+  aim.nx = (e.clientX / innerWidth) * 2 - 1; aim.ny = -(e.clientY / innerHeight) * 2 + 1;
+});
+addEventListener('pointerup', e => { if (e.button === 0 || e.pointerType === 'touch') game.firing = false; });
+$('battle').addEventListener('click', e => { e.stopPropagation(); setCombat(!game.combat); canvas.focus(); });
+$('again').addEventListener('click', () => { restart(); canvas.focus(); });
+const fireBtn = $('t-fire'), harpBtn = $('t-harp');
+fireBtn.addEventListener('pointerdown', e => { e.preventDefault(); game.firing = true; });
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => fireBtn.addEventListener(ev, () => game.firing = false));
+harpBtn.addEventListener('pointerdown', e => { e.preventDefault(); fireHarpoon(); });
+
+/* ============================================================
    POST-PROCESSING
    ============================================================ */
 const rt = new THREE.WebGLRenderTarget(innerWidth * DPR, innerHeight * DPR, { type: THREE.HalfFloatType, samples: 4 });
 const composer = new EffectComposer(renderer, rt);
 composer.addPass(new RenderPass(scene, camera));
+// guard against NaN/Inf pixels (e.g. a searchlight grazing nearby rigging) that bloom would smear into a black frame
+composer.addPass(new ShaderPass({
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);} `,
+  fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+    void main(){ vec4 c = texture2D(tDiffuse, vUv);
+      if (any(isnan(c)) || any(isinf(c)) || c.r != c.r || c.g != c.g || c.b != c.b) c = vec4(0.0, 0.0, 0.0, 1.0);
+      gl_FragColor = vec4(clamp(c.rgb, 0.0, 48.0), 1.0); }`
+}));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.32, 0.7, 0.9);
 composer.addPass(bloom);
 const grade = new ShaderPass({
@@ -1657,7 +2398,9 @@ const keys = new Set();
 addEventListener('keydown', e => {
   if (e.repeat) { keys.add(e.code); return; }
   keys.add(e.code);
-  if (e.code === 'KeyC') cycleCam();
+  if (e.code === 'KeyC' && !game.combat) cycleCam();
+  if (e.code === 'KeyF') setCombat(!game.combat);
+  if (e.code === 'KeyR' && game.combat) fireHarpoon();
   if (e.code === 'KeyL') toggleLamp();
   if (e.code === 'KeyH') document.querySelectorAll('.hud').forEach(h => h.classList.toggle('hide'));
   if (e.code === 'Space') { horn(); e.preventDefault(); }
@@ -1671,9 +2414,22 @@ document.querySelectorAll('#touch button').forEach(b => {
 });
 
 const camCtl = { yaw: 0, pitch: 0, dist: 1, dragging: false, lx: 0, ly: 0, lastInput: -99 };
-canvas.addEventListener('pointerdown', e => { camCtl.dragging = true; camCtl.lx = e.clientX; camCtl.ly = e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointerdown', e => {
+  if (game.combat && e.pointerType !== 'touch') {
+    aim.touch = false; aim.nx = (e.clientX / innerWidth) * 2 - 1; aim.ny = -(e.clientY / innerHeight) * 2 + 1;
+    if (e.button === 0) game.firing = true;
+    if (e.button === 2) fireHarpoon();
+    return;
+  }
+  if (game.combat) { aim.touch = true; aim.nx = 0; aim.ny = 0.15; }
+  camCtl.dragging = true; camCtl.lx = e.clientX; camCtl.ly = e.clientY; canvas.setPointerCapture(e.pointerId);
+});
 canvas.addEventListener('pointermove', e => {
   if (!camCtl.dragging) return;
+  if (game.combat) {
+    aim.yaw -= (e.clientX - camCtl.lx) * 0.005; aim.pitch = THREE.MathUtils.clamp(aim.pitch + (e.clientY - camCtl.ly) * 0.003, -0.25, 1.1);
+    camCtl.lx = e.clientX; camCtl.ly = e.clientY; return;
+  }
   camCtl.yaw -= (e.clientX - camCtl.lx) * 0.005; camCtl.pitch = THREE.MathUtils.clamp(camCtl.pitch + (e.clientY - camCtl.ly) * 0.003, -0.35, 0.9);
   camCtl.lx = e.clientX; camCtl.ly = e.clientY; camCtl.lastInput = clock.elapsedTime;
 });
@@ -1700,7 +2456,8 @@ let started = false;
 
 function updateShip(dt, t) {
   // throttle / rudder input
-  if (keys.has('KeyW') || keys.has('ArrowUp')) ship.throttle = Math.min(1, ship.throttle + dt * 0.35);
+  if (game.over) ship.throttle = 0;
+  else if (keys.has('KeyW') || keys.has('ArrowUp')) ship.throttle = Math.min(1, ship.throttle + dt * 0.35);
   if (keys.has('KeyS') || keys.has('ArrowDown')) ship.throttle = Math.max(-0.25, ship.throttle - dt * 0.35);
   let steer = 0;
   if (keys.has('KeyA') || keys.has('ArrowLeft')) steer += 1;
@@ -1753,7 +2510,7 @@ function updateShip(dt, t) {
   ship.pitch += (tp - ship.pitch) * Math.min(1, dt * 2.2);
   ship.roll += (tr - ship.roll) * Math.min(1, dt * 1.8);
 
-  boat.position.set(ship.x, ship.y, ship.z);
+  boat.position.set(ship.x, ship.y - (ship.sink || 0), ship.z);
   boat.rotation.set(0, ship.heading, 0);
   boatBody.rotation.set(ship.pitch, 0, ship.roll, 'XYZ');
 
@@ -1781,6 +2538,7 @@ function updateShip(dt, t) {
 }
 
 function updateCamera(dt, t) {
+  if (game.combat) { updateCombatCamera(dt, t); applyShake(dt); return; }
   const cfg = CAMS[camMode];
   const idle = t - camCtl.lastInput > 6 && !camCtl.dragging;
   if (idle && !cfg.orbit) { camCtl.yaw *= Math.exp(-dt * 0.4); camCtl.pitch *= Math.exp(-dt * 0.4); }
@@ -1790,15 +2548,13 @@ function updateCamera(dt, t) {
   camTarget.set(ship.x + Math.sin(yaw) * dist, ship.y * 0.3 + h, ship.z + Math.cos(yaw) * dist);
   const k = 1 - Math.exp(-dt * 1.6);
   camera.position.lerp(camTarget, k);
-  const minY = waveHeight(camera.position.x, camera.position.z, t * WAVE_T) + 1.2;
-  if (camera.position.y < minY) camera.position.y = minY;
-  // stay inside the gorge
-  const c = canyonC(camera.position.z), hw = canyonH(camera.position.z) - 6;
-  camera.position.x = THREE.MathUtils.clamp(camera.position.x, c - hw, c + hw);
+  // stay inside the gorge: clamp against the real cliff surface and sea stacks
+  keepCameraInGorge(t);
   const fX = -Math.sin(ship.heading), fZ = -Math.cos(ship.heading);
   camLook.set(ship.x + fX * 14, ship.y + cfg.look + 2, ship.z + fZ * 14);
   camLookSm.lerp(camLook, 1 - Math.exp(-dt * 3));
   camera.lookAt(window.__lookAt || camLookSm);
+  applyShake(dt);
 }
 
 function updateAtmosphere(dt, t) {
@@ -1897,7 +2653,8 @@ function frame() {
   updateCamera(dt, t);
   updateAtmosphere(dt, t);
   updateCreatures(dt, t);
-  updateBirds(t);
+  updateBirds(t, dt);
+  updateBattle(dt, t);
   const threat = nearestCreatureLocal();
   updateCrew(dt, t, threat);
   updateLamp(dt, t, threat);
@@ -1911,6 +2668,7 @@ function frame() {
   sky.position.copy(camera.position);
 
   if (++hudTick % 6 === 0) updateHUD();
+  updateBattleHUD(dt);
   composer.render();
   requestAnimationFrame(frame);
 }
@@ -1944,5 +2702,6 @@ function begin() {
 }
 go.addEventListener('click', e => { e.stopPropagation(); begin(); });
 start.addEventListener('click', () => { if (!go.disabled) begin(); });
-window.__narrows = { ship, camera, cycleCam, begin, wyrms, clock };
+window.__narrows = { ship, camera, cycleCam, begin, wyrms, clock, game, setCombat, aim, fireHarpoon,
+  sim(dt, t) { updateShip(dt, t); updateCamera(dt, t); updateCreatures(dt, t); updateBirds(t, dt); updateBattle(dt, t); } };
 </script>
